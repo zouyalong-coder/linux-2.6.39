@@ -74,6 +74,7 @@ static inline u32 inl(u32 port)
 	return v;
 }
 
+// @zouyalong: 往x80端口写入一个字节，没有任何作用，但可以消耗一次 CPU 时间，达到延迟的效果。
 static inline void io_delay(void)
 {
 	const u16 DELAY_PORT = 0x80;

@@ -78,6 +78,7 @@ extern void free_thread_info(struct thread_info *ti);
 #endif /* THREAD_SHIFT < PAGE_SHIFT */
 
 /* how to get the thread information struct from C */
+// @zouyalong: 与x86相比，PPC 架构拥有较多的寄存器，所以有寄存器专门用于存储当前线程的 thread_info 结构体指针
 static inline struct thread_info *current_thread_info(void)
 {
 	register unsigned long sp asm("r1");

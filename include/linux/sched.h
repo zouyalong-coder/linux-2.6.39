@@ -223,6 +223,8 @@ extern char ___assert_task_state[1 - 2*!!(
 
 #define __set_task_state(tsk, state_value)		\
 	do { (tsk)->state = (state_value); } while (0)
+// @zouyalong: set_mb() is defined in include/linux/compiler-gcc.h。表示内存屏障，防止编译器优化。只对SMP的架构有效。
+// 不考虑SMP的架构，set_mb()就是一个空宏。即 task->state = state_value
 #define set_task_state(tsk, state_value)		\
 	set_mb((tsk)->state, (state_value))
 

@@ -182,9 +182,11 @@ struct thread_info {
 
 
 /* how to get the current stack pointer from C */
+// @zouyalong: 当前任务的 esp 值。
 register unsigned long current_stack_pointer asm("esp") __used;
 
 /* how to get the thread information struct from C */
+// @zouyalong: Linux 2.6 之前，当前任务的 thread_info 放在内核任务栈的最底部。而由于内核任务栈的分配是按页对齐的，所以可以使用当前任务的 esp 值与 THREAD_SIZE-1 做与运算，得到 thread_info 的地址。
 static inline struct thread_info *current_thread_info(void)
 {
 	return (struct thread_info *)
