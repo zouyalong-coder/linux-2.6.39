@@ -112,6 +112,7 @@ void ftrace_likely_update(struct ftrace_branch_data *f, int val, int expect);
  * written by Daniel Walker.
  */
 # ifndef likely
+/* @zouyalong: likely/unlikely: 告知编译器哪个 if 分支的可能性更高，作为分支优化的建议。 */
 #  define likely(x)	(__builtin_constant_p(x) ? !!(x) : __branch_check__(x, 1))
 # endif
 # ifndef unlikely

@@ -35,6 +35,8 @@ static inline void __list_add_rcu(struct list_head *new,
 {
 	new->next = next;
 	new->prev = prev;
+	// @zouyalong: 这句相当于 prev->next = new; 但不能直接用，因为与前两句没有直接的先后关系，编译器可能将前两句优化到后面，导致出错。增加的这个封装实际上是一个内存屏障，保证前两句先执行。
+	// 如果此句在上一句被执行，会导致 new 在未初始化时就加入了链表，此时如果有其他的 RCU 读（不会加锁），用户可能访问到未初始化的数据。
 	rcu_assign_pointer(list_next_rcu(prev), new);
 	next->prev = new;
 }

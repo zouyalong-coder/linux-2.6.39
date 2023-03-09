@@ -188,6 +188,16 @@ void prepare_to_copy(struct task_struct *tsk)
 	unlazy_fpu(tsk);
 }
 
+/**
+ * @zouyalong 
+ * 
+ * @param clone_flags 
+ * @param sp 
+ * @param unused 
+ * @param p 
+ * @param regs 
+ * @return int 
+ */
 int copy_thread(unsigned long clone_flags, unsigned long sp,
 	unsigned long unused,
 	struct task_struct *p, struct pt_regs *regs)

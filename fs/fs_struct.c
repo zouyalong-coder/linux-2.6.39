@@ -122,6 +122,7 @@ struct fs_struct *copy_fs_struct(struct fs_struct *old)
 {
 	struct fs_struct *fs = kmem_cache_alloc(fs_cachep, GFP_KERNEL);
 	/* We don't need to lock fs - think why ;-) */
+	// @zouyalong: 关中断了，不会有其他进程访问
 	if (fs) {
 		fs->users = 1;
 		fs->in_exec = 0;

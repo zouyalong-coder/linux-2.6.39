@@ -161,6 +161,8 @@ struct thread_info {
 
 #define __HAVE_ARCH_THREAD_INFO_ALLOCATOR
 
+// @zouyalong: x86 版本。从 node 中分配任务内核栈（8KB），8KB空间的起始地址放 thread_info 结构体。尾部位置为栈底。通过对栈顶（esp）按栈大小对齐，可以得到 thread_info 结构体的地址。这么设计的好处是：
+// 可以复用 esp 寄存器，通过简单的 offset 获取到进程所需的所有信息。
 #define alloc_thread_info_node(tsk, node)				\
 ({									\
 	struct page *page = alloc_pages_node(node, THREAD_FLAGS,	\
@@ -218,6 +220,9 @@ static inline struct thread_info *current_thread_info(void)
 #ifndef __ASSEMBLY__
 DECLARE_PER_CPU(unsigned long, kernel_stack);
 
+/**
+ * @zouyalong: 从 percpu 中获取当前任务的内核栈地址，然后通过内核栈的偏移量，得到 thread_info 的地址。
+ */
 static inline struct thread_info *current_thread_info(void)
 {
 	struct thread_info *ti;

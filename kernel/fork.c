@@ -82,8 +82,10 @@
  * Protected counters by write_lock_irq(&tasklist_lock)
  */
 unsigned long total_forks;	/* Handle normal Linux uptimes. */
+// @zouyalong: 用于记录系统中的线程数
 int nr_threads; 		/* The idle threads do not count.. */
 
+// @zouyalong: 最大线程数。
 int max_threads;		/* tunable limit on nr_threads */
 
 DEFINE_PER_CPU(unsigned long, process_counts) = 0;
@@ -118,6 +120,7 @@ static struct kmem_cache *task_struct_cachep;
 #endif
 
 #ifndef __HAVE_ARCH_THREAD_INFO_ALLOCATOR
+// @zouyalong: 只有在arch 下没有对应定义时才有效，所以不用看了。。。
 static struct thread_info *alloc_thread_info_node(struct task_struct *tsk,
 						  int node)
 {
@@ -126,6 +129,7 @@ static struct thread_info *alloc_thread_info_node(struct task_struct *tsk,
 #else
 	gfp_t mask = GFP_KERNEL;
 #endif
+	// @zouyalong: 从node节点上分配一个page数组，大小为任务内核栈大小（8KB），返回起始地址
 	struct page *page = alloc_pages_node(node, mask, THREAD_SIZE_ORDER);
 
 	return page ? page_address(page) : NULL;
@@ -250,40 +254,59 @@ int __attribute__((weak)) arch_dup_task_struct(struct task_struct *dst,
 	return 0;
 }
 
+/**
+ * @zouyalong: 复制进程的task_struct结构体
+ * @brief 
+ * 1. 从 numa 中分配内核栈（8KB）
+ * 2. 将 orig 的 thread_info 复制到新的内核栈中
+ * 3. 清除新的内核栈中的 thread_info 中的一些字段
+ * 
+ * @param orig 
+ * @return struct task_struct* 
+ */
 static struct task_struct *dup_task_struct(struct task_struct *orig)
 {
 	struct task_struct *tsk;
 	struct thread_info *ti;
 	unsigned long *stackend;
+	// @zouyalong: 从 NUMA 架构中获取节点，这里应该是利用局部性原理，避免CPU间的内存跨度过大
 	int node = tsk_fork_get_node(orig);
 	int err;
 
 	prepare_to_copy(orig);
 
+	// @zouyalong: 从指定的 node 中分配 task_struct 结构体
 	tsk = alloc_task_struct_node(node);
 	if (!tsk)
 		return NULL;
 
+	// @zouyalong: 从指定的 node 中分配内核栈（8KB），并把低位作为 thread_info 结构体
 	ti = alloc_thread_info_node(tsk, node);
 	if (!ti) {
 		free_task_struct(tsk);
 		return NULL;
 	}
 
+	// @zouyalong: 复制 task_struct 结构体
  	err = arch_dup_task_struct(tsk, orig);
 	if (err)
 		goto out;
 
+	// @zouyalong: task_struct 的 stack 就是 thread_info 结构体的地址
 	tsk->stack = ti;
 
 	err = prop_local_init_single(&tsk->dirties);
 	if (err)
 		goto out;
 
+	// @zouyalong: 复制进程的内核栈，并更改task指针，其它属性不变
 	setup_thread_stack(tsk, orig);
 	clear_user_return_notifier(tsk);
+	// @zouyalong: 清除进程的调度标志，这样新进程不能被调度，直到后面调用 wake_up_new_task() 才能被调度
 	clear_tsk_need_resched(tsk);
+	// @zouyalong: 计算栈下限。
 	stackend = end_of_stack(tsk);
+	// @zouyalong: 设置栈边界标识。
 	*stackend = STACK_END_MAGIC;	/* for overflow detection */
 
 #ifdef CONFIG_CC_STACKPROTECTOR
@@ -775,6 +798,13 @@ fail_nomem:
 	return retval;
 }
 
+/**
+ * @zouyalong: 根据 CLONE_FS 决定是否复制文件系统信息
+ * 
+ * @param clone_flags 
+ * @param tsk 
+ * @return int 
+ */
 static int copy_fs(unsigned long clone_flags, struct task_struct *tsk)
 {
 	struct fs_struct *fs = current->fs;
@@ -795,6 +825,10 @@ static int copy_fs(unsigned long clone_flags, struct task_struct *tsk)
 	return 0;
 }
 
+/**
+ * @zouyalong: 根据 CLONE_FILES 决定是否复制文件描述符表
+ * 
+ */
 static int copy_files(unsigned long clone_flags, struct task_struct * tsk)
 {
 	struct files_struct *oldf, *newf;
@@ -847,6 +881,13 @@ static int copy_io(unsigned long clone_flags, struct task_struct *tsk)
 	return 0;
 }
 
+/**
+ * @zouyalong: 根据 CLONE_SIGHAND 决定是否复制信号处理表 
+ * 
+ * @param clone_flags 
+ * @param tsk 
+ * @return int 
+ */
 static int copy_sighand(unsigned long clone_flags, struct task_struct *tsk)
 {
 	struct sighand_struct *sig;
@@ -991,6 +1032,17 @@ static void posix_cpu_timers_init(struct task_struct *tsk)
  * parts of the process environment (as per the clone
  * flags). The actual kick-off is left to the caller.
  */
+/**
+ * @zouyalong
+ * 1. 调用dup_task_struct()为新进程创建一个内核栈、thread_info结构和task_struct，这些值与当前进程的值相同，此时子进程和父进程的描述符是完成相同的
+ * 2. 检测并创建子进程，当前用户所用于的进程数没有超过给它分配的资源的限制。
+ * 3. 子进程着手与父进程区别开来。
+ * 4. 子进程的状态被设置为TASK_UNINTERRUPTIBLE，以保证它不会投入运行。
+ * 5. copy_process()调用copy_flags()以更新task_struct的falgs成员。
+ * 6. 调用alloc_pid()为新进程分配一个有效的pid
+ * 7. 根据传入的clone()的参数标志，copy_process()拷贝或者共享打开的文件、文件系统信息、信号处理函数、进程 地址空间和命名空间等。
+ * 8. 最后copy_process()做扫尾工作并返回一个执行子进程的指针。
+*/
 static struct task_struct *copy_process(unsigned long clone_flags,
 					unsigned long stack_start,
 					struct pt_regs *regs,
@@ -1031,17 +1083,21 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 				current->signal->flags & SIGNAL_UNKILLABLE)
 		return ERR_PTR(-EINVAL);
 
+	// @zouyalong: 创建一个新的task_struct。todo：确定实际实现函数。
 	retval = security_task_create(clone_flags);
 	if (retval)
 		goto fork_out;
 
 	retval = -ENOMEM;
+	// @zouyalong: 复制当前进程的task_struct。
 	p = dup_task_struct(current);
 	if (!p)
 		goto fork_out;
 
+	// @zouyalong: trace
 	ftrace_graph_init_task(p);
 
+	// @zouyalong: 初始化进程锁
 	rt_mutex_init_task(p);
 
 #ifdef CONFIG_PROVE_LOCKING
@@ -1056,6 +1112,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 			goto bad_fork_free;
 	}
 
+	// @zouyalong: in kernel/cred.c. 认证相关，处理进程的权限。
 	retval = copy_creds(p, clone_flags);
 	if (retval < 0)
 		goto bad_fork_free;
@@ -1075,12 +1132,16 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	p->did_exec = 0;
 	delayacct_tsk_init(p);	/* Must remain after dup_task_struct() */
 	copy_flags(clone_flags, p);
+	// @zouyalong: 清空children和sibling链表。
 	INIT_LIST_HEAD(&p->children);
 	INIT_LIST_HEAD(&p->sibling);
+
+	// @zouyalong: 清零 RCU 相关的数据结构。
 	rcu_copy_process(p);
 	p->vfork_done = NULL;
 	spin_lock_init(&p->alloc_lock);
 
+	// @zouyalong: 初始化进程的信号相关的数据结构。
 	init_sigpending(&p->pending);
 
 	p->utime = cputime_zero;
@@ -1101,6 +1162,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	task_io_accounting_init(&p->ioac);
 	acct_clear_integrals(p);
 
+	// @zouyalong: 清空 CPU 时间。
 	posix_cpu_timers_init(p);
 
 	p->lock_depth = -1;		/* -1 = no lock */
@@ -1109,6 +1171,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	monotonic_to_bootbased(&p->real_start_time);
 	p->io_context = NULL;
 	p->audit_context = NULL;
+	// @zouyalong: 控制组相关。
 	cgroup_fork(p);
 #ifdef CONFIG_NUMA
 	p->mempolicy = mpol_dup(p->mempolicy);
@@ -1153,6 +1216,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 #endif
 
 	/* Perform scheduler related setup. Assign this task to a CPU. */
+	// @zouyalong: 调度器相关的初始化。并将进程分配到一个 CPU 上。
 	sched_fork(p, clone_flags);
 
 	retval = perf_event_init_task(p);
@@ -1400,6 +1464,10 @@ struct task_struct * __cpuinit fork_idle(int cpu)
  * It copies the process, and if successful kick-starts
  * it and waits for it to finish using the VM if required.
  */
+/**
+ * @zouyalong: 
+ * fork/vfork
+*/
 long do_fork(unsigned long clone_flags,
 	      unsigned long stack_start,
 	      struct pt_regs *regs,
@@ -1429,6 +1497,7 @@ long do_fork(unsigned long clone_flags,
 	/*
 	 * When called from kernel_thread, don't do user tracing stuff.
 	 */
+
 	if (likely(user_mode(regs)))
 		trace = tracehook_prepare_clone(clone_flags);
 
@@ -1464,6 +1533,7 @@ long do_fork(unsigned long clone_flags,
 		 */
 		p->flags &= ~PF_STARTING;
 
+		// 将state 从 UNINTERRUPTIBLE 变为 RUNNABLE
 		wake_up_new_task(p, clone_flags);
 
 		tracehook_report_clone_complete(trace, regs,

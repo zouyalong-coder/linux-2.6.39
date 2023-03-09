@@ -305,14 +305,24 @@ struct task_group root_task_group;
 
 #endif	/* CONFIG_CGROUP_SCHED */
 
+/**
+ * @zouyalong: CFS调度器的数据结构 
+ * 
+ */
 /* CFS-related fields in a runqueue */
 struct cfs_rq {
+	// cfs_rq 上的 load 表示当前 cfs_rq 上所有实体的 load 总和
 	struct load_weight load;
+	// 表示当前 cfs_rq 上存在的子实体，如果子实体是调度组，也只算一个.
+	// 而 h_nr_running 的统计会递归地包含子调度组中的所有实体。因此可以通过比较这两者是否相等来判断当前 cfs_rq 上是否存在调度组。   
 	unsigned long nr_running;
 
+	// 当前 cfs_rq 上执行的时间 
 	u64 exec_clock;
+	// 这是一个非常重要的成员，每个 cfs_rq 都会维护一个最小虚拟时间 min_vruntime，这个虚拟时间是一个基准值，每个新添加到当前队列的 se 都会被初始化为当前的 min_vruntime 附近的值，以保证新添加的执行实体和当前队列上已存在的实体拥有差不多的执行机会，至于执行多长时间，则是由对应实体的 load 决定，该 load 会决定 se->vruntime 的增长速度。
 	u64 min_vruntime;
 
+	// cfs_rq 维护的红黑树结构，其中包含一个根节点以及最左边实体(vruntime最小的实体，对应一个进程)的指针。  
 	struct rb_root tasks_timeline;
 	struct rb_node *rb_leftmost;
 
@@ -323,11 +333,17 @@ struct cfs_rq {
 	 * 'curr' points to currently running entity on this cfs_rq.
 	 * It is set to NULL otherwise (i.e when none are currently running).
 	 */
+	// 记录当前 cfs_rq 上特殊的几个实体指针：
+    // curr：cfs_rq 上当前正在运行的实体，如果运行的进程实体不在当前 cfs_rq 上，设置为 NULL。需要注意的是,在支持组调度的情况下,一个进程 se 运行,被设置为当前 cfs_rq 的 curr,同时其 parent 也会被设置为同级 cfs_rq 的 curr. 
+    // next：用户特别指定的需要在下一次调度中执行的进程实体，但是这并不是绝对的，只有在 next 指定的进程实体快要运行(但可能不是下次)的时候，因为这时候不会造成太大的不公平，就会运行指定的 next，也是一种临时提高优先级的做法。 
+    // last：上次执行过的实体不应该跨越公平性原则执行，比如将 next 设置为 last，这时候就需要仔细斟酌一下了，也是保证公平性的一种方法。  
+    // 
 	struct sched_entity *curr, *next, *last, *skip;
 
 	unsigned int nr_spread_over;
 
 #ifdef CONFIG_FAIR_GROUP_SCHED
+	// 指向 percpu rq 的指针，在不支持组调度的系统中，runqueue 上只存在一个 cfs_rq，可以直接结构体的地址偏移反向获取到 rq 的指针，而支持组调度的 cfs_rq 可能是 root cfs_rq 的子级 cfs_rq,因此需要通过一个指针获取当前 cfs_rq 所在的 rq。
 	struct rq *rq;	/* cpu runqueue to which this cfs_rq is attached */
 
 	/*
@@ -363,6 +379,7 @@ struct cfs_rq {
 	 * load_last is the last time we updated the load average and saw load
 	 * load_unacc_exec_time is currently unaccounted execution time
 	 */
+	// 在多核 CPU 中，对当前 cfs_rq 的负载统计，该统计会精确到每个 se，自然也就会传递到 cfs_rq，下面的几个成员用于负载统计，目前专注于 cfs 调度的主要实现，负载均衡部分后续再进行分析。  
 	u64 load_avg;
 	u64 load_period;
 	u64 load_stamp, load_last, load_unacc_exec_time;

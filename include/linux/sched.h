@@ -1141,15 +1141,28 @@ struct sched_statistics {
 };
 #endif
 
+/**
+ * @zouyalong: 调度实体可能是进程和调度组两种，因此结构体中会同时包含这两类实体相关的数据。  
+ * 
+ */
 struct sched_entity {
+	// load 表示当前调度实体的权重，这个权重决定了一个调度实体的运行优先级，对进程实体而言，它是由静态优先级计算得到，对应调度组而言，是组内各实体的 load 之和。  
+    // load 和 cpu_load 两个名字取得是有歧义的，虽然都是 load，但是 cpu_load 却是表示负载
 	struct load_weight	load;		/* for load-balancing */
+	// 红黑树的数据节点，使用该 rb_node 将当前节点挂到红黑树上面，还是内核中的老套路，将 rb_node 嵌入 sched_entity 结构，在操作节点时，可以通过 rb_node 反向获取到其父结构。
 	struct rb_node		run_node;
+	// 链表节点，被链接到 percpu 的 rq->cfs_tasks 上，在做 CPU 之间的负载均衡时，就会从该链表上选出 group_node 节点作为迁移进程
 	struct list_head	group_node;
+	// 标志位，代表当前调度实体是否在就绪队列上
 	unsigned int		on_rq;
 
+	// 当前实体上次被调度执行的时间
 	u64			exec_start;
+	// 当前实体总执行时间
 	u64			sum_exec_runtime;
+	// 当前实体的虚拟时间，调度器就是通过调度实体的虚拟时间进行调度，在选择下一个待执行实体时总是选择虚拟时间最小的。
 	u64			vruntime;
+	// 截止到上次统计，进程执行的时间，通常，通过 sum_exec_runtime - prev_sum_exec_runtime 来统计进程本次在 CPU 上执行了多长时间，以执行某些时间相关的操作 
 	u64			prev_sum_exec_runtime;
 
 	u64			nr_migrations;
@@ -1159,9 +1172,12 @@ struct sched_entity {
 #endif
 
 #ifdef CONFIG_FAIR_GROUP_SCHED
+	// 指向父级调度实体，如果当前实体是进程实体，则指向其所在的调度组，如果当前实体是调度组，则指向其父级调度组
 	struct sched_entity	*parent;
+	// 当前调度实体属于的 cfs_rq.
 	/* rq on which this entity is (to be) queued: */
 	struct cfs_rq		*cfs_rq;
+	// 如果当前调度实体是一个调度组，那么它将拥有自己的 cfs_rq，属于该组内的所有调度实体在该 cfs_rq 上排列，而且当前 se 也是组内所有调度实体的 parent，子 se 存在一个指针指向 parent，而父级与子 se 的联系并不直接，而是通过访问 cfs_rq 来找到对应的子 se。
 	/* rq "owned" by this entity/group: */
 	struct cfs_rq		*my_q;
 #endif
@@ -1193,8 +1209,12 @@ enum perf_event_task_context {
 };
 
 struct task_struct {
+	// 进程目前所处于的状态，0 表示 TASK_RUNNING 状态，虽说是 running 状态，并不代表它一定正在 CPU 上运行，而是两种可能：正在运行或者处于就绪状态。而准确地判断一个进程是否正在运行是通过 on_cpu 字段。  
+    // 其它非 0 的值表示其它的非就绪状态：比如睡眠、停止等，具体参考 include/linux/sched.h
 	volatile long state;	/* -1 unrunnable, 0 runnable, >0 stopped */
+	// @zouyalong: 任务内核栈地址。指向内核栈的低位地址，X86中正好是 thread_info 的地址
 	void *stack;
+	// @zouyalong: 使用数
 	atomic_t usage;
 	unsigned int flags;	/* per process flags, defined below */
 	unsigned int ptrace;
@@ -1203,14 +1223,21 @@ struct task_struct {
 
 #ifdef CONFIG_SMP
 #ifdef __ARCH_WANT_UNLOCKED_CTXSW
+	// 判断进程是不是正在某个 CPU 上运行，如果是，那么 on_cpu 就是该 CPU 的 ID，否则为 -1
 	int oncpu;
 #endif
 #endif
-
+	// prio: 该进程的动态优先级，在 cfs 中并不重要。
+	// static_prio: 进程的静态优先级，该优先级直接决定了非实时进程的 load_weight，从而决定了该进程对应调度实体的 vruntime 增长速度。 
+	// normal_prio: 对于实时进程和非实时进程而言，优先级以及对应的表达式不一样的，实时进程占用 0~99 号优先级，数字越大优先级越高，而非实时进程则是 100~139，数字越大优先级越低，为了对优先级进行统一，需要将实时优先级经过一层转换，而非实时优先级不需要动，normal_prio 代表的就是统一的优先级表示方法。
 	int prio, static_prio, normal_prio;
+	// 进程的实时优先级，和实时调度相关
 	unsigned int rt_priority;
+	// 进程所属的调度器类，也就是由哪种调度器进行管理。
 	const struct sched_class *sched_class;
+	// 进程对应的 sched_entity，每一个进程都对应一个 sched_entity，反之并不成立，因为某些 sched_entity 可能对应一个进程组。 
 	struct sched_entity se;
+	// 实时进程的调度实体，rt_se
 	struct sched_rt_entity rt;
 
 #ifdef CONFIG_PREEMPT_NOTIFIERS
@@ -1237,6 +1264,7 @@ struct task_struct {
 #ifdef CONFIG_PREEMPT_RCU
 	int rcu_read_lock_nesting;
 	char rcu_read_unlock_special;
+	// @zouyalong: 任务的 rcu_node_entry
 	struct list_head rcu_node_entry;
 #endif /* #ifdef CONFIG_PREEMPT_RCU */
 #ifdef CONFIG_TREE_PREEMPT_RCU
@@ -1327,6 +1355,7 @@ struct task_struct {
 	unsigned long min_flt, maj_flt;
 
 	struct task_cputime cputime_expires;
+	// @zouyalong: 用来统计进程或进程组的 cpu 时间
 	struct list_head cpu_timers[3];
 
 /* process credentials */
@@ -1390,6 +1419,7 @@ struct task_struct {
 	struct irqaction *irqaction;
 #endif
 
+	// @zouyalong: PI, Process Inheritance(?)
 	/* Protection of the PI data structures: */
 	raw_spinlock_t pi_lock;
 
@@ -2309,12 +2339,14 @@ static inline void unlock_task_sighand(struct task_struct *tsk,
 #define task_thread_info(task)	((struct thread_info *)(task)->stack)
 #define task_stack_page(task)	((task)->stack)
 
+// @zouyalong: 重 org 复制任务的 thread_info，并将thread_info的task指针指向新任务
 static inline void setup_thread_stack(struct task_struct *p, struct task_struct *org)
 {
 	*task_thread_info(p) = *task_thread_info(org);
 	task_thread_info(p)->task = p;
 }
 
+// @zouyalong: 内核栈的范围是 thread_info 到 栈底。这里计算内核栈的下限（向下增长）
 static inline unsigned long *end_of_stack(struct task_struct *p)
 {
 	return (unsigned long *)(task_thread_info(p) + 1);
@@ -2377,6 +2409,7 @@ static inline void set_tsk_need_resched(struct task_struct *tsk)
 	set_tsk_thread_flag(tsk,TIF_NEED_RESCHED);
 }
 
+// @zouyalong: 清除 TIF_NEED_RESCHED 标志，表示不需要调度
 static inline void clear_tsk_need_resched(struct task_struct *tsk)
 {
 	clear_tsk_thread_flag(tsk,TIF_NEED_RESCHED);

@@ -26,6 +26,9 @@
 struct kmem_cache *task_xstate_cachep;
 EXPORT_SYMBOL_GPL(task_xstate_cachep);
 
+/**
+ * @zouyalong: 复制进程的线程信息，但对 fpu 做另外处理。
+ */
 int arch_dup_task_struct(struct task_struct *dst, struct task_struct *src)
 {
 	int ret;
@@ -234,6 +237,7 @@ void __switch_to_xtra(struct task_struct *prev_p, struct task_struct *next_p,
 
 int sys_fork(struct pt_regs *regs)
 {
+	// @zouyalong: 实现在 kernel/fork.c SIGCHLD。
 	return do_fork(SIGCHLD, regs->sp, regs, 0, NULL, NULL);
 }
 

@@ -45,7 +45,7 @@ struct files_struct {
   /*
    * read mostly part
    */
-	atomic_t count;
+	atomic_t count;	// @zouyalong: 引用计数
 	struct fdtable __rcu *fdt;
 	struct fdtable fdtab;
   /*
