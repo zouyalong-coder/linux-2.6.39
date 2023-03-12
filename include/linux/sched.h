@@ -2,6 +2,7 @@
 #define _LINUX_SCHED_H
 
 /*
+ * @zouyalong: clone flags。
  * cloning flags:
  */
 #define CSIGNAL		0x000000ff	/* signal mask to be sent at exit */
@@ -12,7 +13,7 @@
 #define CLONE_PTRACE	0x00002000	/* set if we want to let tracing continue on the child too */
 #define CLONE_VFORK	0x00004000	/* set if the parent wants the child to wake it up on mm_release */
 #define CLONE_PARENT	0x00008000	/* set if we want to have the same parent as the cloner */
-#define CLONE_THREAD	0x00010000	/* Same thread group? */
+#define CLONE_THREAD	0x00010000	/* 创建线程。Same thread group? */
 #define CLONE_NEWNS	0x00020000	/* New namespace group? */
 #define CLONE_SYSVSEM	0x00040000	/* share system V SEM_UNDO semantics */
 #define CLONE_SETTLS	0x00080000	/* create a new TLS for the child */
@@ -1055,6 +1056,7 @@ struct sched_domain;
 
 #define DEQUEUE_SLEEP		1
 
+// @zouyalong: 调度器接口。
 struct sched_class {
 	const struct sched_class *next;
 
@@ -1208,6 +1210,10 @@ enum perf_event_task_context {
 	perf_nr_task_contexts,
 };
 
+/**
+ * @zouyalong: 任务。 
+ * 
+ */
 struct task_struct {
 	// 进程目前所处于的状态，0 表示 TASK_RUNNING 状态，虽说是 running 状态，并不代表它一定正在 CPU 上运行，而是两种可能：正在运行或者处于就绪状态。而准确地判断一个进程是否正在运行是通过 on_cpu 字段。  
     // 其它非 0 的值表示其它的非就绪状态：比如睡眠、停止等，具体参考 include/linux/sched.h
@@ -1283,6 +1289,7 @@ struct task_struct {
 	struct plist_node pushable_tasks;
 #endif
 
+	// 进程的地址空间。
 	struct mm_struct *mm, *active_mm;
 #ifdef CONFIG_COMPAT_BRK
 	unsigned brk_randomized:1;
@@ -2536,6 +2543,7 @@ static inline unsigned int task_cpu(const struct task_struct *p)
 	return task_thread_info(p)->cpu;
 }
 
+// @zouyalong: 在 kernel/sched.c 中实现。
 extern void set_task_cpu(struct task_struct *p, unsigned int cpu);
 
 #else

@@ -219,6 +219,10 @@ struct mm_rss_stat {
 };
 #endif /* !USE_SPLIT_PTLOCKS */
 
+/**
+ * @zouyalong: 进程地址空间。 
+ * 
+ */
 struct mm_struct {
 	struct vm_area_struct * mmap;		/* list of VMAs */
 	struct rb_root mm_rb;
@@ -233,6 +237,8 @@ struct mm_struct {
 	unsigned long task_size;		/* size of task vm space */
 	unsigned long cached_hole_size; 	/* if non-zero, the largest hole below free_area_cache */
 	unsigned long free_area_cache;		/* first hole of size cached_hole_size or larger */
+
+	// 页表地址.
 	pgd_t * pgd;
 	atomic_t mm_users;			/* How many users with user space? */
 	atomic_t mm_count;			/* How many references to "struct mm_struct" (users count as 1) */

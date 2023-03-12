@@ -23,12 +23,17 @@ struct exec_domain;
 #include <asm/ftrace.h>
 #include <asm/atomic.h>
 
+/**
+ * @zouyalong: 每个进程都有一个thread_info结构体，这个结构体保存了进程的一些状态信息。X86 中，这个结构体放在进程内核栈的最低端（低地址） 
+ * 
+ */
 struct thread_info {
 	struct task_struct	*task;		/* main task structure */
 	struct exec_domain	*exec_domain;	/* execution domain */
 	__u32			flags;		/* low level flags */
 	__u32			status;		/* thread synchronous flags */
 	__u32			cpu;		/* current CPU */
+	// @zouyalong: 用于实现抢占，当preempt_count为0时，表示可以抢占，当preempt_count大于0时，表示不可以抢占
 	int			preempt_count;	/* 0 => preemptable,
 						   <0 => BUG */
 	mm_segment_t		addr_limit;

@@ -15,6 +15,9 @@
  * some arches have their own ways of determining the offset (x86_64, s390).
  */
 #ifndef __per_cpu_offset
+// @zouyalong: arch/x86/kernel/setup_percpu.c
+  36,15: unsigned long __per_cpu_offset[NR_CPUS] __read_mostly = {
+  39,15: EXPORT_SYMBOL(__per_cpu_offset);
 extern unsigned long __per_cpu_offset[NR_CPUS];
 
 #define per_cpu_offset(x) (__per_cpu_offset[x])

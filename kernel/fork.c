@@ -1467,6 +1467,7 @@ struct task_struct * __cpuinit fork_idle(int cpu)
 /**
  * @zouyalong: 
  * fork/vfork
+ * @regs: x86 定义 arch/x86/include/asm/ptrace.h.
 */
 long do_fork(unsigned long clone_flags,
 	      unsigned long stack_start,

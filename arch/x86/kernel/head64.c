@@ -53,6 +53,7 @@ static void __init copy_bootdata(char *real_mode_data)
 	}
 }
 
+// @zouyalong: 从这里开始，就是真正的内核启动了
 void __init x86_64_start_kernel(char * real_mode_data)
 {
 	int i;
@@ -121,5 +122,6 @@ void __init x86_64_start_reservations(char *real_mode_data)
 	 * RAM in e820. All other memory is free game.
 	 */
 
+	// @zouyalong: init/main.c
 	start_kernel();
 }

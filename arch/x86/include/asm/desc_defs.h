@@ -19,6 +19,10 @@
  * so we can get rid of it transparently in the future -- glommer
  */
 /* 8 byte segment descriptor */
+/**
+ * @zouyalong: 8 字节的段描述符。在 GDT 中，一个是 tss、另一个是 ldt 
+ * 
+ */
 struct desc_struct {
 	union {
 		struct {
@@ -91,10 +95,12 @@ typedef struct desc_struct tss_desc;
 #define gate_segment(g)		((g).a >> 16)
 #endif
 
+/// @zouyalong: gdt表的描述符. packed 表示紧凑型排列，不做对齐优化。即此结构体的字节数为 16 + 32 = 48 字节。
+/// 参考：https://wiki.osdev.org/Global_Descriptor_Table
 struct desc_ptr {
 	unsigned short size;
 	unsigned long address;
-} __attribute__((packed)) ;
+} __attribute__((packed)) ; 
 
 #endif /* !__ASSEMBLY__ */
 

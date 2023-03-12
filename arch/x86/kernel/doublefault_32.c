@@ -15,11 +15,14 @@ static unsigned long doublefault_stack[DOUBLEFAULT_STACKSIZE];
 
 #define ptr_ok(x) ((x) > PAGE_OFFSET && (x) < PAGE_OFFSET + MAXMEM)
 
+/// @zouyalong: 二次错误处理函数(32bits)
+/// @param  
 static void doublefault_fn(void)
 {
 	struct desc_ptr gdt_desc = {0, 0};
 	unsigned long gdt, tss;
 
+	/// arch/x86/include/asm/desc.h。通过 sgdt 指令获取 GDT 的基地址和大小
 	store_gdt(&gdt_desc);
 	gdt = gdt_desc.address;
 

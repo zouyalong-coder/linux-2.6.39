@@ -354,6 +354,7 @@ static noinline void __init_refok rest_init(void)
 	 * the init task will end up wanting to create kthreads, which, if
 	 * we schedule it before we create kthreadd, will OOPS.
 	 */
+	// @zouyalong: 创建 init 进程，init 进程的 pid 为 1
 	kernel_thread(kernel_init, NULL, CLONE_FS | CLONE_SIGHAND);
 	numa_default_policy();
 	pid = kernel_thread(kthreadd, NULL, CLONE_FS | CLONE_FILES);
@@ -453,6 +454,7 @@ static void __init mm_init(void)
 	vmalloc_init();
 }
 
+// @zouyalong: 开始kernel. called from arch/x86/kernel/head64.c
 asmlinkage void __init start_kernel(void)
 {
 	char * command_line;
@@ -621,6 +623,7 @@ asmlinkage void __init start_kernel(void)
 
 	ftrace_init();
 
+	// 
 	/* Do the rest non-__init'ed, we're now alive */
 	rest_init();
 }

@@ -326,6 +326,7 @@ struct cfs_rq {
 	struct rb_root tasks_timeline;
 	struct rb_node *rb_leftmost;
 
+	// 调度队列上的任务
 	struct list_head tasks;
 	struct list_head *balance_iterator;
 
@@ -1738,6 +1739,12 @@ static void update_sysctl(void);
 static int get_update_sysctl_factor(void);
 static void update_cpu_load(struct rq *this_rq);
 
+/**
+ * @zouyalong: 设置任务 CPU 
+ * 
+ * @param p 
+ * @param cpu 
+ */
 static inline void __set_task_cpu(struct task_struct *p, unsigned int cpu)
 {
 	set_task_rq(p, cpu);
@@ -1747,7 +1754,7 @@ static inline void __set_task_cpu(struct task_struct *p, unsigned int cpu)
 	 * successfuly executed on another CPU. We must ensure that updates of
 	 * per-task data have been completed by this moment.
 	 */
-	smp_wmb();
+	smp_wmb(); // 必须保证 thread_info->cpu设置前 task 确实在对应的运行队列上，否则会出现任务 CPU 与实际运行 CPU 不匹配的中间情况，所以要使用屏障
 	task_thread_info(p)->cpu = cpu;
 #endif
 }
@@ -2170,6 +2177,13 @@ task_hot(struct task_struct *p, u64 now, struct sched_domain *sd)
 	return delta < (s64)sysctl_sched_migration_cost;
 }
 
+/**
+ * @zouyalong: 
+ * Set the task cpu object
+ * 
+ * @param p 
+ * @param new_cpu 
+ */
 void set_task_cpu(struct task_struct *p, unsigned int new_cpu)
 {
 #ifdef CONFIG_SCHED_DEBUG
@@ -2183,6 +2197,7 @@ void set_task_cpu(struct task_struct *p, unsigned int new_cpu)
 
 	trace_sched_migrate_task(p, new_cpu);
 
+	// 发生了 CPU 迁移，则记录一下迁移相关的信息
 	if (task_cpu(p) != new_cpu) {
 		p->se.nr_migrations++;
 		perf_sw_event(PERF_COUNT_SW_CPU_MIGRATIONS, 1, 1, NULL, 0);
@@ -2820,6 +2835,7 @@ fire_sched_out_preempt_notifiers(struct task_struct *curr,
 #endif /* CONFIG_PREEMPT_NOTIFIERS */
 
 /**
+ * @zouyalong: 准备切换任务。
  * prepare_task_switch - prepare to switch tasks
  * @rq: the runqueue preparing to switch
  * @prev: the current task that is being switched out
@@ -2967,6 +2983,9 @@ asmlinkage void schedule_tail(struct task_struct *prev)
  * context_switch - switch to the new MM and the new
  * thread's register state.
  */
+/**
+ * @zouyalong: 上下文切换。
+*/
 static inline void
 context_switch(struct rq *rq, struct task_struct *prev,
 	       struct task_struct *next)
@@ -4088,6 +4107,9 @@ pick_next_task(struct rq *rq)
 /*
  * schedule() is the main scheduler function.
  */
+/**
+ * @zouyalong: schedule 函数是内核中最重要的函数之一，它是内核中的调度器，它会根据当前进程的状态和优先级，选择一个合适的进程来运行。
+*/
 asmlinkage void __sched schedule(void)
 {
 	struct task_struct *prev, *next;
@@ -4097,7 +4119,9 @@ asmlinkage void __sched schedule(void)
 
 need_resched:
 	preempt_disable();
+	// 从 current->thread_info 中获取当前进程的 cpu
 	cpu = smp_processor_id();
+	// 获取当前 cpu 的运行队列
 	rq = cpu_rq(cpu);
 	rcu_note_context_switch(cpu);
 	prev = rq->curr;

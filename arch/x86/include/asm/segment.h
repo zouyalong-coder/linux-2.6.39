@@ -165,6 +165,7 @@
 #define __USER32_CS   (GDT_ENTRY_DEFAULT_USER32_CS * 8 + 3)
 #define __USER32_DS	__USER_DS
 
+/// @zouyalong: GDT 的前三个描述符分别是0、内核代码段、内核数据段
 #define GDT_ENTRY_TSS 8	/* needs two entries */
 #define GDT_ENTRY_LDT 10 /* needs two entries */
 #define GDT_ENTRY_TLS_MIN 12

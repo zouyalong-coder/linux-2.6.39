@@ -22,10 +22,17 @@
 
 #ifndef __ASSEMBLY__
 
+/**
+ * @zouyalong: 线程信息结构体。
+ * 
+ * @task: 指向当前线程的task_struct结构体。 
+ * 
+ */
 struct thread_info {
 	struct task_struct	*task;		/* main task structure */
 	unsigned long		flags;
 	struct exec_domain	*exec_domain;	/* execution domain */
+	// 取值为 PREEMPT_ACTIVE | count，其中count表示当前线程被禁止抢占的次数。
 	int			preempt_count;	/* 0 => preemptable, <0 => BUG */
 	__u32			cpu;		/* should always be 0 on m68k */
 	unsigned long		tp_value;	/* thread pointer */

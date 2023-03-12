@@ -546,6 +546,12 @@ static inline void native_set_iopl_mask(unsigned mask)
 #endif
 }
 
+/**
+ * @zouyalong: 将thread中的sp0加载到tss中。tss 结构是 x86 提供的上下文切换硬件， linux 没有使用，但需要维护 sp0。
+ * 
+ * @param tss 
+ * @param thread 
+ */
 static inline void
 native_load_sp0(struct tss_struct *tss, struct thread_struct *thread)
 {
@@ -580,6 +586,7 @@ static inline void native_swapgs(void)
 #define set_debugreg(value, register)				\
 	native_set_debugreg(register, value)
 
+// @zouyalong: 从thread中加载sp0到tss中。
 static inline void load_sp0(struct tss_struct *tss,
 			    struct thread_struct *thread)
 {
@@ -934,10 +941,12 @@ extern unsigned long thread_saved_pc(struct task_struct *tsk);
 #define STACK_TOP		TASK_SIZE
 #define STACK_TOP_MAX		TASK_SIZE_MAX
 
+/// @zouyalong: 初始化线程，主要是设置 sp0，即内核栈的栈顶
 #define INIT_THREAD  { \
 	.sp0 = (unsigned long)&init_stack + sizeof(init_stack) \
 }
 
+/// @zouyalong: 初始化TSS，主要是设置 sp0，即内核栈的栈顶
 #define INIT_TSS  { \
 	.x86_tss.sp0 = (unsigned long)&init_stack + sizeof(init_stack) \
 }

@@ -360,7 +360,8 @@ void start_thread_ia32(struct pt_regs *regs, u32 new_ip, u32 new_sp)
 }
 #endif
 
-/*
+/**
+ * @zouyalong: 切换函数
  *	switch_to(x,y) should switch tasks from x to y.
  *
  * This could still be optimized:

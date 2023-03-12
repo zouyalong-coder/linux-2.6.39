@@ -87,6 +87,7 @@ static inline int desc_empty(const void *ptr)
 #define load_tr(tr) asm volatile("ltr %0"::"m" (tr))
 #define load_ldt(ldt) asm volatile("lldt %0"::"m" (ldt))
 
+/// @zouyalong: 读取当前CPU的GDT表
 #define store_gdt(dtr) native_store_gdt(dtr)
 #define store_idt(dtr) native_store_idt(dtr)
 #define store_tr(tr) (tr = native_store_tr())
@@ -224,6 +225,8 @@ static inline void native_load_idt(const struct desc_ptr *dtr)
 	asm volatile("lidt %0"::"m" (*dtr));
 }
 
+/// @zouyalong: 保存gdt到dtr, sgdt dtr
+/// @param dtr 
 static inline void native_store_gdt(struct desc_ptr *dtr)
 {
 	asm volatile("sgdt %0":"=m" (*dtr));
