@@ -18,6 +18,9 @@
 /*
  * Invoke the realmode switch hook if present; otherwise
  * disable all interrupts.
+ * @zouyalong: 如果发现 realmode_switch hook， 那么将调用它并禁止 NMI 中断，反之将直接禁止 NMI 中断。
+ * 只有当 bootloader 运行在宿主环境下（比如在 DOS 下运行 ）， hook 才会被使用。
+ * 可以参考：https://www.kernel.org/doc/Documentation/x86/boot.txt
  */
 static void realmode_switch_hook(void)
 {
@@ -26,6 +29,7 @@ static void realmode_switch_hook(void)
 			     : : "m" (boot_params.hdr.realmode_swtch)
 			     : "eax", "ebx", "ecx", "edx");
 	} else {
+		// 中断是由硬件或者软件产生的，当中断产生的时候， CPU 将得到通知。这个时候， CPU 将停止当前指令的执行，保存当前代码的环境，然后将控制权移交到中断处理程序。当中断处理程序完成之后，将恢复中断之前的运行环境，从而被中断的代码将继续运行。 NMI 中断是一类特殊的中断，往往预示着系统发生了不可恢复的错误，所以在正常运行的操作系统中，NMI 中断是不会被禁止的，但是在进入保护模式之前，由于特殊需求，代码禁止了这类中断。
 		asm volatile("cli");
 		outb(0x80, 0x70); /* Disable NMI */
 		io_delay();

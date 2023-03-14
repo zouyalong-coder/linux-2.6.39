@@ -46,6 +46,7 @@ static inline void copy_user_page(void *to, void *from, unsigned long vaddr,
  */
 #define __pa_symbol(x)	__pa(__phys_reloc_hide((unsigned long)(x)))
 
+/// @zouyalong: 将物理地址转换为虚拟地址. 使用固定偏移量的映射方式。
 #define __va(x)			((void *)((unsigned long)(x)+PAGE_OFFSET))
 
 #define __boot_va(x)		__va(x)

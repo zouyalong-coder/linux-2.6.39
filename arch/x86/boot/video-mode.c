@@ -30,6 +30,7 @@ int do_restore;		/* Screen contents changed during mode flip */
 int graphic_mode;	/* Graphic mode with linear frame buffer */
 
 /* Probe the video drivers and have them generate their mode lists. */
+/// @zouyalong: 遍历所有的显卡，并通过调用驱动程序设置显卡所支持的显示模式
 void probe_cards(int unsafe)
 {
 	struct card_info *card;
@@ -40,6 +41,7 @@ void probe_cards(int unsafe)
 
 	probed[unsafe] = 1;
 
+	// @zouyalong: video_cards 在 setup.ld 中定义。使用 __videocard 宏
 	for (card = video_cards; card < video_cards_end; card++) {
 		if (card->unsafe == unsafe) {
 			if (card->probe)

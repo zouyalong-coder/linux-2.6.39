@@ -119,13 +119,20 @@ static int detect_memory_88(void)
 	return -(oreg.eflags & X86_EFLAGS_CF); /* 0 or -1 */
 }
 
+/**
+ * @zouyalong: 得到系统当前内存的使用分布。 
+ * 
+ * @return int 
+ */
 int detect_memory(void)
 {
 	int err = -1;
 
+	// 从BIOS中获取全部内存分布信息
 	if (detect_memory_e820() > 0)
 		err = 0;
 
+	// 下面两种是获取临近内存大小的方法，但是这两种方法获取的内存大小不准确
 	if (!detect_memory_e801())
 		err = 0;
 

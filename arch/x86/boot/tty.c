@@ -46,7 +46,7 @@ static void __attribute__((section(".inittext"))) bios_putchar(int ch)
 	ireg.cx = 0x0001;
 	ireg.ah = 0x0e;
 	ireg.al = ch;
-	intcall(0x10, &ireg, NULL);
+	intcall(0x10, &ireg, NULL); // @zouyalong: 0x10 是 BIOS 打印中断号
 }
 
 void __attribute__((section(".inittext"))) putchar(int ch)

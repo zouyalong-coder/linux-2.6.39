@@ -127,6 +127,9 @@ static void enable_a20_fast(void)
 
 #define A20_ENABLE_LOOPS 255	/* Number of times to try */
 
+/// @zouyalong: 启用 A20 线
+/// @param  
+/// @return 
 int enable_a20(void)
 {
        int loops = A20_ENABLE_LOOPS;

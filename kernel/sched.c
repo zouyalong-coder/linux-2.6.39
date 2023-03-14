@@ -8157,6 +8157,9 @@ static void init_tg_rt_entry(struct task_group *tg, struct rt_rq *rt_rq,
 }
 #endif
 
+/// @zouyalong: 调度相关的初始化，包括 idle 任务创建。
+/// @param  
+/// @return 
 void __init sched_init(void)
 {
 	int i, j;
@@ -8310,6 +8313,7 @@ void __init sched_init(void)
 	 * but because we are the idle thread, we just pick up running again
 	 * when this runqueue becomes "idle".
 	 */
+	// 使当前进程成为idle进程
 	init_idle(current, smp_processor_id());
 
 	calc_load_update = jiffies + LOAD_FREQ;

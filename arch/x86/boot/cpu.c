@@ -32,6 +32,7 @@ static char *cpu_name(int level)
 	}
 }
 
+// @zouyalong: 检查系统可运行的最低CPU级别。其它：1）检查cpu标志，如果cpu是64位cpu，那么就设置long mode, 2) 检查CPU的制造商，根据制造商的不同，设置不同的CPU选项。比如对于AMD出厂的cpu，如果不支持 SSE+SSE2，那么就禁止这些选项。
 int validate_cpu(void)
 {
 	u32 *err_flags;

@@ -15,6 +15,7 @@
 /* Simple and small GDT entries for booting only */
 
 #define GDT_ENTRY_BOOT_CS	2
+// @zouyalong: 内核栈段
 #define __BOOT_CS		(GDT_ENTRY_BOOT_CS * 8)
 
 #define GDT_ENTRY_BOOT_DS	(GDT_ENTRY_BOOT_CS + 1)

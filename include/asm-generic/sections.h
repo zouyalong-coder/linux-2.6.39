@@ -5,6 +5,7 @@
 
 extern char _text[], _stext[], _etext[];
 extern char _data[], _sdata[], _edata[];
+// @zouyalong: 此处这些地址都在 linker.ld 中定义
 extern char __bss_start[], __bss_stop[];
 extern char __init_begin[], __init_end[];
 extern char _sinittext[], _einittext[];

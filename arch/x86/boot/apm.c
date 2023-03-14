@@ -18,6 +18,11 @@
 
 #include "boot.h"
 
+/**
+ * @zouyalong: 从BIOS获得 高级电源管理 信息。query_apm_bios 也是调用 0x15 中断，只不过将 ax 设置成 0x5300 以得到APM设置信息。中断调用返回之后，代码将检查 bx 和 cx 的值，如果 bx 不是 0x504d ( PM 标记 )，或者 cx 不是 0x02 (0x02，表示支持32位模式)，那么代码直接返回错误。否则，将进行下面的步骤。 
+ * 代码使用 ax = 0x5304 来调用 0x15 中断，以断开 APM 接口；然后使用 ax = 0x5303 调用 0x15 中断，使用32位接口重新连接 APM；最后使用 ax = 0x5300 调用 0x15 中断再次获取APM设置，然后将信息写入 boot_params.apm_bios_info
+ * @return int 
+ */
 int query_apm_bios(void)
 {
 	struct biosregs ireg, oreg;

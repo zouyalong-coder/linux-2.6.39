@@ -73,6 +73,7 @@ void __init x86_64_start_kernel(char * real_mode_data)
 	BUILD_BUG_ON(__fix_to_virt(__end_of_fixed_addresses) <= MODULES_END);
 
 	/* clear bss before set_intr_gate with early_idt_handler */
+	// @zouyalong: 清空bss段。bss段的清理一般有操作系统完成，而由于我们的内核是直接从BIOS启动的，所以这里需要手动清空bss段
 	clear_bss();
 
 	/* Make NULL pointers segfault */

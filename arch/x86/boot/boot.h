@@ -74,7 +74,7 @@ static inline u32 inl(u32 port)
 	return v;
 }
 
-// @zouyalong: 往x80端口写入一个字节，没有任何作用，但可以消耗一次 CPU 时间，达到延迟的效果。
+// @zouyalong: 往x80端口写入一个字节，没有任何作用，但可以消耗一次 CPU 时间，达到延迟的效果。对 I/O 端口 0x80 写入任何的字节都将得到 1 ms 的延时。
 static inline void io_delay(void)
 {
 	const u16 DELAY_PORT = 0x80;
@@ -207,6 +207,7 @@ extern char _end[];
 extern char *HEAP;
 extern char *heap_end;
 #define RESET_HEAP() ((void *)( HEAP = _end ))
+// @zouyalong: 从 heap 中分配 n 个 type 类型的空间。
 static inline char *__get_heap(size_t s, size_t a, size_t n)
 {
 	char *tmp;
@@ -216,6 +217,7 @@ static inline char *__get_heap(size_t s, size_t a, size_t n)
 	HEAP += s*n;
 	return tmp;
 }
+// @zouyalong: 从 heap 中分配 n 个 type 类型的空间。
 #define GET_HEAP(type, n) \
 	((type *)__get_heap(sizeof(type),__alignof__(type),(n)))
 
@@ -226,6 +228,9 @@ static inline bool heap_free(size_t n)
 
 /* copy.S */
 
+/**
+ * @zouyalong: 不适用内置函数而选择自己使用汇编实现的原因是：使用 fastcall 原则，即使用寄存器进行参数传递，而不是使用栈。
+ */
 void copy_to_fs(addr_t dst, void *src, size_t len);
 void *copy_from_fs(void *dst, addr_t src, size_t len);
 void copy_to_gs(addr_t dst, void *src, size_t len);
@@ -243,8 +248,10 @@ int enable_a20(void);
 int query_apm_bios(void);
 
 /* bioscall.c */
+// @zouyalong: bios使用的寄存器
 struct biosregs {
 	union {
+		// 32位寄存器
 		struct {
 			u32 edi;
 			u32 esi;
@@ -258,6 +265,7 @@ struct biosregs {
 			u32 _dses;
 			u32 eflags;
 		};
+		// 16位寄存器
 		struct {
 			u16 di, hdi;
 			u16 si, hsi;
@@ -271,6 +279,7 @@ struct biosregs {
 			u16 es, ds;
 			u16 flags, hflags;
 		};
+		// 64位寄存器
 		struct {
 			u8 dil, dih, edi2, edi3;
 			u8 sil, sih, esi2, esi3;

@@ -17,6 +17,8 @@
 #include "video.h"
 #include "vesa.h"
 
+/// @zouyalong: 将当前屏幕上光标的位置保存起来
+/// 首先函数初始化一个类型为 biosregs 的变量，将其中的 AH 寄存器内容设置成 0x3，然后调用 0x10 BIOS 中断。当中断调用返回之后，DL 和 DH 寄存器分别包含了当前光标的行和列信息。接着，这2个信息将被保存到 boot_params.screen_info 字段的 orig_x 和 orig_y字段。
 static void store_cursor_position(void)
 {
 	struct biosregs ireg, oreg;
@@ -35,6 +37,7 @@ static void store_cursor_position(void)
 		boot_params.screen_info.flags |= VIDEO_FLAGS_NOCURSOR;
 }
 
+/// @zouyalong: 将当前使用的显示模式保存到 boot_params.screen_info.orig_video_mode。
 static void store_video_mode(void)
 {
 	struct biosregs ireg, oreg;
@@ -55,6 +58,7 @@ static void store_video_mode(void)
  * This is done by asking the BIOS except for the rows/columns
  * parameters in the default 80x25 mode -- these are set directly,
  * because some very obscure BIOSes supply insane values.
+ * @zouyalong: 将对应显示模式的相关参数写入 boot_params.screen_info 字段
  */
 static void store_mode_params(void)
 {
@@ -69,6 +73,9 @@ static void store_mode_params(void)
 	store_cursor_position();
 	store_video_mode();
 
+	// 根据当前显示模式的设定，给 video_segment 变量设置正确的值（实际上就是设置显示内存的起始地址）。在 BIOS 将控制权转移到引导扇区的时候，显示内存地址和显示模式的对应关系如下表所示：
+	// 0xB000:0x0000 	32 Kb 	Monochrome Text Video Memory
+	// 0xB800:0x0000 	32 Kb 	Color Text Video Memory
 	if (boot_params.screen_info.orig_video_mode == 0x07) {
 		/* MDA, HGC, or VGA in monochrome mode */
 		video_segment = 0xb000;
@@ -78,9 +85,11 @@ static void store_mode_params(void)
 	}
 
 	set_fs(0);
+	// 保存字体大小信息到 boot_params.screen_info.orig_video_points：
 	font_size = rdfs16(0x485); /* Font size, BIOS area */
 	boot_params.screen_info.orig_video_points = font_size;
 
+	// 从地址 0x44a 处获得屏幕列信息，从地址 0x484 处获得屏幕行信息，并将它们保存到 boot_params.screen_info.orig_video_cols 和 boot_params.screen_info.orig_video_lines
 	x = rdfs16(0x44a);
 	y = (adapter == ADAPTER_CGA) ? 25 : rdfs8(0x484)+1;
 
@@ -234,6 +243,7 @@ static struct saved_screen {
 	u16 *data;
 } saved;
 
+/// @zouyalong: 获得当前屏幕的所有信息（包括屏幕大小，当前光标位置，屏幕上的字符信息），并且保存到 saved_screen 结构体中
 static void save_screen(void)
 {
 	/* Should be called after store_mode_params() */
@@ -312,6 +322,8 @@ static void restore_screen(void)
 	store_cursor_position();
 }
 
+/// @zouyalong: 显示模式初始化。通过用户菜单选择显示模式，然后调用set_mode()函数设置显示模式。
+/// @param  
 void set_video(void)
 {
 	u16 mode = boot_params.hdr.vid_mode;
@@ -319,7 +331,9 @@ void set_video(void)
 	RESET_HEAP();
 
 	store_mode_params();
+	// @zouyalong: 将当前屏幕上的所有信息保存到 HEAP 中。
 	save_screen();
+	// 遍历显卡。
 	probe_cards(0);
 
 	for (;;) {

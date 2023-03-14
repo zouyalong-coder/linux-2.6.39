@@ -25,7 +25,7 @@ char *heap_end = _end;		/* Default end of heap = no heap */
  * screws up the old-style command line protocol, adjust by
  * filling in the new-style command line pointer instead.
  */
-
+/// @zouyalong: 从hdr拷贝到boot_params.hdr，同时处理旧的命令行协议
 static void copy_boot_params(void)
 {
 	struct old_cmdline {
@@ -60,6 +60,7 @@ static void copy_boot_params(void)
  * Set the keyboard repeat rate to maximum.  Unclear why this
  * is done here; this might be possible to kill off as stale code.
  */
+// @zouyalong: 设置键盘的按键检测频率。
 static void keyboard_set_repeat(void)
 {
 	struct biosregs ireg;
@@ -71,6 +72,7 @@ static void keyboard_set_repeat(void)
 /*
  * Get Intel SpeedStep (IST) information.
  */
+// @zouyalong: 获取Intel SpeedStep信息。这个方法首先检查CPU类型，然后调用 0x15 中断获得这个信息并放入 boot_params 中。
 static void query_ist(void)
 {
 	struct biosregs ireg, oreg;
@@ -111,13 +113,14 @@ static void init_heap(void)
 	char *stack_end;
 
 	if (boot_params.hdr.loadflags & CAN_USE_HEAP) {
+		/// @zouyalong: *stack_end = *esp - STACK_SIZE
 		asm("leal %P1(%%esp),%0"
 		    : "=r" (stack_end) : "i" (-STACK_SIZE));
 
 		heap_end = (char *)
 			((size_t)boot_params.hdr.heap_end_ptr + 0x200);
 		if (heap_end > stack_end)
-			heap_end = stack_end;
+			heap_end = stack_end; // @zouyalong: 将 stack_end 设置成 heap_end（这么做是因为在大部分系统中全局堆和堆栈是相邻的，但是增长方向是相反的）
 	} else {
 		/* Boot protocol 2.00 only, no heap available */
 		puts("WARNING: Ancient bootloader, some functionality "
@@ -125,6 +128,8 @@ static void init_heap(void)
 	}
 }
 
+/// @zouyalong: kernel 入口。
+/// @param  
 void main(void)
 {
 	/* First, copy the boot header into the "zeropage" */

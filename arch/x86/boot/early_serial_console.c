@@ -40,6 +40,13 @@ static void early_serial_init(int port, int baud)
 	early_serial_base = port;
 }
 
+/**
+ * @zouyalong: 首先查看命令行参数是否包含 earlyprintk 选项。如果命令行参数包含该选项，那么函数将分析这个选项的内容。得到控制台将使用的串口信息，然后进行串口的初始化。以下是 earlyprintk 选项可能的取值
+ * serial,0x3f8,115200
+ * serial,ttyS0,115200
+ * ttyS0,115200 
+ * 
+ */
 static void parse_earlyprintk(void)
 {
 	int baud = DEFAULT_BAUD;

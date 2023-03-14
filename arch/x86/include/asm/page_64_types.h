@@ -24,7 +24,8 @@
 #define PUD_PAGE_SIZE		(_AC(1, UL) << PUD_SHIFT)
 #define PUD_PAGE_MASK		(~(PUD_PAGE_SIZE-1))
 
-/*
+/**
+ * @zouyalong: 0xffff880000000000UL
  * Set __PAGE_OFFSET to the most negative possible address +
  * PGDIR_SIZE*16 (pgd slot 272).  The gap is to allow a space for a
  * hypervisor to fit.  Choosing 16 slots here is arbitrary, but it's

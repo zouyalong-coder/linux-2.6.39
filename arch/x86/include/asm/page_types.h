@@ -27,6 +27,7 @@
 
 #define HUGE_MAX_HSTATE 2
 
+/// @zouyalong: 内存页的逻辑地址偏移。32位的地址从配置中取；64位则是0xffff800000000000
 #define PAGE_OFFSET		((unsigned long)__PAGE_OFFSET)
 
 #define VM_DATA_DEFAULT_FLAGS \
