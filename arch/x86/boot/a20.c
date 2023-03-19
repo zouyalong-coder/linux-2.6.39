@@ -53,11 +53,15 @@ static int empty_8042(void)
 #define A20_TEST_SHORT  32
 #define A20_TEST_LONG	2097152	/* 2^21 */
 
+/// @zouyalong: a20 检测。
+/// @param loops 
+/// @return 
 static int a20_test(int loops)
 {
 	int ok = 0;
 	int saved, ctr;
 
+	// 向 fs、gs 写入段地址。
 	set_fs(0x0000);
 	set_gs(0xffff);
 

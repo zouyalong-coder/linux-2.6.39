@@ -126,6 +126,10 @@ static inline u16 rdfs16(addr_t addr)
 	asm volatile("movw %%fs:%1,%0" : "=r" (v) : "m" (*(u16 *)addr));
 	return v;
 }
+
+/// @zouyalong: 从fs段中读取一个32位的数据. fs/gs等段寄存器本身为了使进程可以同时访问多个段，但现在OS采用“平坦模型”，一般都只有一个段。所以 fs/gs和es一样，不再保持原来的使用方式。linux 用它们来放与线程相关的内存地址。
+/// @param addr 
+/// @return 
 static inline u32 rdfs32(addr_t addr)
 {
 	u32 v;

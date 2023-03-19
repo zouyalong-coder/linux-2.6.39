@@ -39,6 +39,7 @@ static void realmode_switch_hook(void)
 /*
  * Disable all interrupts at the legacy PIC.
  */
+// @zouyalong: 屏蔽所有中断。
 static void mask_all_interrupts(void)
 {
 	outb(0xff, 0xa1);	/* Mask all interrupts on the secondary PIC */
@@ -50,6 +51,7 @@ static void mask_all_interrupts(void)
 /*
  * Reset IGNNE# if asserted in the FPU.
  */
+/// @zouyalong: 复位协处理器。
 static void reset_coprocessor(void)
 {
 	outb(0, 0xf0);
@@ -71,7 +73,9 @@ static void setup_gdt(void)
 {
 	/* There are machines which are known to not boot with the GDT
 	   being 8-byte unaligned.  Intel recommends 16 byte alignment. */
+	/// @zouyalong: GDT 元素必须是 16 字节对齐的。
 	static const u64 boot_gdt[] __attribute__((aligned(16))) = {
+		// GDT_ENTRY_BOOT_CS=2，前两个 gdt 元素是空，没有使用（第一个必须为空）。
 		/* CS: code, read/execute, 4 GB, base 0 */
 		[GDT_ENTRY_BOOT_CS] = GDT_ENTRY(0xc09b, 0, 0xfffff),
 		/* DS: data, read/write, 4 GB, base 0 */
@@ -79,6 +83,8 @@ static void setup_gdt(void)
 		/* TSS: 32-bit tss, 104 bytes, base 4096 */
 		/* We only have a TSS here to keep Intel VT happy;
 		   we don't actually use it for anything. */
+		// @zouyalong: 32 位 TSS， 104 字节，基地址为 4096。
+		// 这里由于已经关了中断（null_idt），所以不会使用到 TSS。设置 TSS 只是为了让 Intel 处理器能正确进入保护模式。
 		[GDT_ENTRY_BOOT_TSS] = GDT_ENTRY(0x0089, 4096, 103),
 	};
 	/* Xen HVM incorrectly stores a pointer to the gdt_ptr, instead
@@ -87,15 +93,18 @@ static void setup_gdt(void)
 	   proper kernel GDT. */
 	static struct gdt_ptr gdt;
 
+	// @zouyalong: gdt 的长度及基地址。
 	gdt.len = sizeof(boot_gdt)-1;
-	gdt.ptr = (u32)&boot_gdt + (ds() << 4);
+	gdt.ptr = (u32)&boot_gdt + (ds() << 4);// 此时还在实模式，简单运算。
 
+	// 设置 GDT。
 	asm volatile("lgdtl %0" : : "m" (gdt));
 }
 
 /*
  * Set up the IDT
  */
+// @zouyalong: 清空 IDT。
 static void setup_idt(void)
 {
 	static const struct gdt_ptr null_idt = {0, 0};
@@ -120,11 +129,17 @@ void go_to_protected_mode(void)
 	reset_coprocessor();
 
 	/* Mask all interrupts in the PIC */
+	// @zouyalong: 屏蔽所有中断。
 	mask_all_interrupts();
 
 	/* Actual transition to protected mode... */
+	// @zouyalong: 清空 IDT，设置 GDT，跳转到保护模式。
 	setup_idt();
 	setup_gdt();
+	/// @zouyalong: 跳转到保护模式。代码在 pmjump.S 中。
+	/// 两个参数：1. 保护模式下的代码入口；2. boot_params的地址。
+	/// 参数分别放在 eax、edx 中。
+	/// code32_start 指向 arch/x86/boot/compressed/head_64.S 的 startup_32
 	protected_mode_jump(boot_params.hdr.code32_start,
 			    (u32)&boot_params + (ds() << 4));
 }

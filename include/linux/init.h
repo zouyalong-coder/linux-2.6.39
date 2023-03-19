@@ -106,6 +106,7 @@
 #define __memexitconst   __section(.memexit.rodata)
 
 /* For assembly routines */
+// @zouyalong: arch/x86/boot/compressed/vmlinux.lds.S 中使用
 #define __HEAD		.section	".head.text","ax"
 #define __INIT		.section	".init.text","ax"
 #define __FINIT		.previous

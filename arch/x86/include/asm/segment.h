@@ -15,13 +15,14 @@
 /* Simple and small GDT entries for booting only */
 
 #define GDT_ENTRY_BOOT_CS	2
-// @zouyalong: 内核栈段
-#define __BOOT_CS		(GDT_ENTRY_BOOT_CS * 8)
+// @zouyalong: 内核栈段。每个段描述符都是 8 字节，所以 cx 寄存器的值将是 2*8 = 16
+#define __BOOT_CS		(GDT_ENTRY_BOOT_CS * 8) 
 
 #define GDT_ENTRY_BOOT_DS	(GDT_ENTRY_BOOT_CS + 1)
 #define __BOOT_DS		(GDT_ENTRY_BOOT_DS * 8)
 
 #define GDT_ENTRY_BOOT_TSS	(GDT_ENTRY_BOOT_CS + 2)
+// @zouyalong: TSS 段描述符的偏移地址，32。
 #define __BOOT_TSS		(GDT_ENTRY_BOOT_TSS * 8)
 
 #ifdef CONFIG_X86_32

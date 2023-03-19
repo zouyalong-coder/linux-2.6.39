@@ -10,6 +10,7 @@
 
 #include <asm/pgtable_types.h>
 
+// @zouyalong: CONFIG_PHYSICAL_START 是配置值，默认是 0x100000（16MB），用于配置内核加载的物理地址（内核基地址）。
 /* Physical address where kernel should be loaded. */
 #define LOAD_PHYSICAL_ADDR ((CONFIG_PHYSICAL_START \
 				+ (CONFIG_PHYSICAL_ALIGN - 1)) \

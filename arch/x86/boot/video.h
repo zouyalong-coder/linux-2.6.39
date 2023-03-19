@@ -80,6 +80,7 @@ struct card_info {
 	u16 xmode_n;		/* Size of unprobed mode range */
 };
 
+// @zouyalong: 利用gcc的section属性，将video_cards和video_cards_end放在.videocards段中，形成一个数组。
 #define __videocard struct card_info __attribute__((section(".videocards")))
 extern struct card_info video_cards[], video_cards_end[];
 
