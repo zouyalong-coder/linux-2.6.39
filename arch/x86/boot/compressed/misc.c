@@ -323,10 +323,19 @@ static void parse_elf(void *output)
 	}
 }
 
-asmlinkage void decompress_kernel(void *rmode, memptr heap,
-				  unsigned char *input_data,
-				  unsigned long input_len,
-				  unsigned char *output)
+/// @zouyalong: 
+/// @brief 这个函数从图形/控制台初始化开始。我们要再次做这件事，因为我们不知道我们是不是从实模式开始，或者是使用了引导加载器，或者引导加载器用了32位还是64位启动协议。
+/// @param rmode 指向 boot_params 结构体的指针，boot_params被引导加载器填充或在早期内核初始化时填充
+/// @param heap  指向早期启动堆的起始地址 boot_heap 的指针
+/// @param input_data 指向压缩的内核，即 arch/x86/boot/compressed/vmlinux.bin.bz2 的指针
+/// @param input_len 压缩的内核的大小
+/// @param output 解压后内核的起始地址
+/// @return 
+asmlinkage void decompress_kernel(void *rmode, // rdi
+				memptr heap,	// rsi
+				  unsigned char *input_data,	// rdx
+				  unsigned long input_len,	// ecx
+				  unsigned char *output)	// r8
 {
 	real_mode = rmode;
 
