@@ -151,6 +151,7 @@ static void __init pcpup_populate_pte(unsigned long addr)
 	populate_extra_pte(addr);
 }
 
+// @zouyalong: 仅32位系统使用，分配段描述符
 static inline void setup_percpu_segment(int cpu)
 {
 #ifdef CONFIG_X86_32
@@ -164,12 +165,15 @@ static inline void setup_percpu_segment(int cpu)
 #endif
 }
 
+/// @zouyalong: 每个 CPU 调用一次，初始化 percpu 区域，所有 percpu 区域内的定义被每个CPU都初始化一次，就形成了多份，不需要加锁。
 void __init setup_per_cpu_areas(void)
 {
 	unsigned int cpu;
 	unsigned long delta;
 	int rc;
 
+	// @zouyalong: 输出在内核配置中以 CONFIG_NR_CPUS 配置项设置的最大 CPUs 数，实际的 CPU 个数，nr_cpumask_bits（对于新的 cpumask 操作来说和 NR_CPUS 是一样的），还有 NUMA 节点个数。
+	// 使用 dmesg | grep percpu 可以看到这些信息。
 	pr_info("NR_CPUS:%d nr_cpumask_bits:%d nr_cpu_ids:%d nr_node_ids:%d\n",
 		NR_CPUS, nr_cpumask_bits, nr_cpu_ids, nr_node_ids);
 
@@ -206,8 +210,9 @@ void __init setup_per_cpu_areas(void)
 
 	/* alrighty, percpu areas up and running */
 	delta = (unsigned long)pcpu_base_addr - (unsigned long)__per_cpu_start;
+	// @zouyalong: 遍历 CPU，设置 percpu 区域的偏移量，设置 percpu 区域的栈保护值，设置 percpu 区域的 APIC ID，设置 percpu 区域的 CPU 编号，设置 percpu 区域的段描述符。
 	for_each_possible_cpu(cpu) {
-		per_cpu_offset(cpu) = delta + pcpu_unit_offsets[cpu];
+		per_cpu_offset(cpu) = delta + pcpu_unit_offsets[cpu];// @zouyalong: percpu 区域的偏移量
 		per_cpu(this_cpu_off, cpu) = per_cpu_offset(cpu);
 		per_cpu(cpu_number, cpu) = cpu;
 		setup_percpu_segment(cpu);

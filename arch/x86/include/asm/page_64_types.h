@@ -2,7 +2,8 @@
 #define _ASM_X86_PAGE_64_DEFS_H
 
 #define THREAD_ORDER	1
-#define THREAD_SIZE  (PAGE_SIZE << THREAD_ORDER)
+// @zouyalong: 线程栈大小
+#define THREAD_SIZE  (PAGE_SIZE << THREAD_ORDER) // 2 * 4096 = 8192 8K
 #define CURRENT_MASK (~(THREAD_SIZE - 1))
 
 #define EXCEPTION_STACK_ORDER 0

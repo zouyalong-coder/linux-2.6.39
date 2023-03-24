@@ -348,6 +348,7 @@ void load_percpu_segment(int cpu)
  * Current gdt points %fs at the "master" per-cpu area: after this,
  * it's on the real one.
  */
+// @zouyalong: 每个 CPU 一个 gdt，配置后不变。
 void switch_to_new_gdt(int cpu)
 {
 	struct desc_ptr gdt_descr;

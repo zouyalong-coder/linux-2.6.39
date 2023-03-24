@@ -33,9 +33,12 @@ static inline void fill_ldt(struct desc_struct *desc,
 extern struct desc_ptr idt_descr;
 extern gate_desc idt_table[];
 
+
+/// @zouyalong: 一个gdt_page结构体占用一个页，内部有一个 gdt 数组，数组的每个元素是一个描述符
 struct gdt_page {
 	struct desc_struct gdt[GDT_ENTRIES];
 } __attribute__((aligned(PAGE_SIZE)));
+/// @zouyalong: per-CPU变量是2.6内核中的特性。顾名思义，当我们创建一个 per-CPU 变量时，每个CPU都会拥有一份它自己的拷贝，在这里我们创建的是 gdt_page per-CPU变量。这种类型的变量有很多有点，比如由于每个CPU都只访问自己的变量而不需要锁等。因此在多处理器的情况下，每一个处理器核心都将拥有一份自己的 GDT 表，其中的每一项都代表了一块内存，这块内存可以由在这个核心上运行的线程访问。可以参考https://xinqiu.gitbooks.io/linux-insides-cn/content/Concepts/linux-cpu-1.html
 DECLARE_PER_CPU_PAGE_ALIGNED(struct gdt_page, gdt_page);
 
 static inline struct desc_struct *get_cpu_gdt_table(unsigned int cpu)

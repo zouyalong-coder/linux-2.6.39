@@ -231,6 +231,7 @@ SECTIONS
 	 * output PHDR, so the next output section - .init.text - should
 	 * start another segment - init.
 	 */
+	; @zouyalong: 定义 percpu 变量，这里的 percpu 变量是在 SMP 模式下的，包括了 percpu 变量的偏移量 __per_cpu_offset
 	PERCPU_VADDR(INTERNODE_CACHE_BYTES, 0, :percpu)
 #endif
 
@@ -387,6 +388,7 @@ SECTIONS
  * Per-cpu symbols which need to be offset from __per_cpu_load
  * for the boot processor.
  */
+ ; @zouyalong: 为了让boot processor的per-cpu变量也能够被访问到，需要将其偏移量加上__per_cpu_load
 #define INIT_PER_CPU(x) init_per_cpu__##x = x + __per_cpu_load
 INIT_PER_CPU(gdt_page);
 INIT_PER_CPU(irq_stack_union);

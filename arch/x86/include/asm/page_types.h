@@ -18,6 +18,7 @@
 #define PHYSICAL_PAGE_MASK	(((signed long)PAGE_MASK) & __PHYSICAL_MASK)
 
 #define PMD_PAGE_SIZE		(_AC(1, UL) << PMD_SHIFT)
+// @zouyalong: 中层页目录（Page middle directory）屏蔽位
 #define PMD_PAGE_MASK		(~(PMD_PAGE_SIZE-1))
 
 #define HPAGE_SHIFT		PMD_SHIFT

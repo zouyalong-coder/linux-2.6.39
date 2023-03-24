@@ -710,6 +710,7 @@
  * Note that this macros defines __per_cpu_load as an absolute symbol.
  * If there is no need to put the percpu section at a predetermined
  * address, use PERCPU().
+ * @zouyalong: 参考：https://xinqiu.gitbooks.io/linux-insides-cn/content/Concepts/linux-cpu-1.html
  */
 #define PERCPU_VADDR(cacheline, vaddr, phdr)				\
 	VMLINUX_SYMBOL(__per_cpu_load) = .;				\

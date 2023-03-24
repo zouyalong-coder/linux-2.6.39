@@ -662,6 +662,7 @@ int nr_cpu_ids __read_mostly = NR_CPUS;
 EXPORT_SYMBOL(nr_cpu_ids);
 
 /* An arch may set nr_cpu_ids earlier if needed, so this would be redundant */
+// @zouyalong: 查询 cpu_possible_mask 中最高位的 1 的位置（与 NR_CPUS 取最大值），即 cpu 的个数
 void __init setup_nr_cpu_ids(void)
 {
 	nr_cpu_ids = find_last_bit(cpumask_bits(cpu_possible_mask),NR_CPUS) + 1;

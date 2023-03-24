@@ -83,10 +83,10 @@ startup_64:
 	cmpq	%rax, %rdx
 	jae	bad_address
 
-	; @zouyalong: 在开始设置 Identity 分页之前，我们需要首先修正下面的地址：
+	; @zouyalong: 在开始设置 Identity 分页之前，我们需要首先修正下面的物理地址：实际上就是对页表中的项加上内核加载的偏移量
 	/* Fixup the physical addresses in the page table
 	 */
-	addq	%rbp, init_level4_pgt + 0(%rip)
+	addq	%rbp, init_level4_pgt + 0(%rip)	; *init_level4_pgt[0] += rbp// 即把页表中原来设置的物理地址加上内核加载的偏移量
 	addq	%rbp, init_level4_pgt + (L4_PAGE_OFFSET*8)(%rip)
 	addq	%rbp, init_level4_pgt + (L4_START_KERNEL*8)(%rip)
 
@@ -98,22 +98,23 @@ startup_64:
 	addq	%rbp, level2_fixmap_pgt + (506*8)(%rip)
 
 	/* Add an Identity mapping if I am above 1G */
-	leaq	_text(%rip), %rdi
-	andq	$PMD_PAGE_MASK, %rdi
+	leaq	_text(%rip), %rdi ; 把_text的地址放入rdi
+	andq	$PMD_PAGE_MASK, %rdi	; 对齐
 
 	movq	%rdi, %rax
-	shrq	$PUD_SHIFT, %rax
-	andq	$(PTRS_PER_PUD - 1), %rax
+	shrq	$PUD_SHIFT, %rax	; @zouyalong: 为了得到这条索引，我们把 _text 的地址右移 PGDIR_SHIFT(39) 位。
+	andq	$(PTRS_PER_PUD - 1), %rax	; 9个位，即512个页目录项，每个项8字节，共4096字节，即1页，通过这个就得到了 _text 的 PUD 偏移量（512项）。rax = offset_in_pud(_text)
 	jz	ident_complete
 
-	leaq	(level2_spare_pgt - __START_KERNEL_map + _KERNPG_TABLE)(%rbp), %rdx
-	leaq	level3_ident_pgt(%rip), %rbx
-	movq	%rdx, 0(%rbx, %rax, 8)
+	leaq	(level2_spare_pgt - __START_KERNEL_map + _KERNPG_TABLE)(%rbp), %rdx	; rdx= level2_spare_pgt	物理地址
+	leaq	level3_ident_pgt(%rip), %rbx; rbx = level3_ident_pgt
+	movq	%rdx, 0(%rbx, %rax, 8)	; level3_ident_pgt + 8 * offset_in_pud(_text) = level2_spare_pgt
 
+	; rdi = &_text
 	movq	%rdi, %rax
 	shrq	$PMD_SHIFT, %rax
 	andq	$(PTRS_PER_PMD - 1), %rax
-	leaq	__PAGE_KERNEL_IDENT_LARGE_EXEC(%rdi), %rdx
+	leaq	__PAGE_KERNEL_IDENT_LARGE_EXEC(%rdi), %rdx	; rdx = __PAGE_KERNEL_IDENT_LARGE_EXEC
 	leaq	level2_spare_pgt(%rip), %rbx
 	movq	%rdx, 0(%rbx, %rax, 8)
 ident_complete:
@@ -125,19 +126,22 @@ ident_complete:
 	 * beyond _end.
 	 */
 
+
+	; 首先把 level2_kernel_pgt 的地址赋值给 rdi，并把页表项的地址赋值给 r8 寄存器
 	leaq	level2_kernel_pgt(%rip), %rdi
-	leaq	4096(%rdi), %r8
+	leaq	4096(%rdi), %r8	; r8 = level2_kernel_pgt + 4096
 	/* See if it is a valid page table entry */
-1:	testq	$1, 0(%rdi)
-	jz	2f
-	addq	%rbp, 0(%rdi)
+1:	testq	$1, 0(%rdi)	; 检查 level2_kernel_pgt 中的存在位，如果其为0，就把 rdi 加上8以便指向下一个页。
+	jz	2f	; if level2_kernel_pgt[0] == 0, goto 2
+	addq	%rbp, 0(%rdi)	; else level2_kernel_pgt[4096] = rbp = &_text
 	/* Go to the next page */
-2:	addq	$8, %rdi
+2:	addq	$8, %rdi; 如果其为0，就把 rdi 加上8以便指向下一个页。
 	cmp	%r8, %rdi
-	jne	1b
+	jne	1b	; 将其与 r8（即页表项的地址）作比较，不相等的话就跳转回前面的标签 1 ，反之则继续运行。
 
 	/* Fixup phys_base */
-	addq	%rbp, phys_base(%rip)
+	; 其中 phys_base 与 level2_kernel_pgt 第一项相同，为 512 MB的内核映射。
+	addq	%rbp, phys_base(%rip) ; 使用 rbp （即 _text 的物理地址）来修正 phys_base 物理地址。将 early_level4_pgt 的物理地址与 rbp 相加，然后跳转至标签 1
 
 	/* Fixup trampoline */
 	addq	%rbp, trampoline_level4_pgt + 0(%rip)
@@ -164,13 +168,14 @@ ENTRY(secondary_startup_64)
 	 */
 
 	/* Enable PAE mode and PGE */
+	;@zouyalong 开启 PAE 和 PGE （Paging Global Extension），并且将phys_base的物理地址（见上）放入 rax 就寄存器，同时将其放入 cr3 寄存器
 	movl	$(X86_CR4_PAE | X86_CR4_PGE), %eax
 	movq	%rax, %cr4
 
 	/* Setup early boot stage 4 level pagetables. */
 	movq	$(init_level4_pgt - __START_KERNEL_map), %rax
-	addq	phys_base(%rip), %rax
-	movq	%rax, %cr3
+	addq	phys_base(%rip), %rax; phys_base 在上面已经被修正过了
+	movq	%rax, %cr3	; 页表基址寄存器 cr3 = init_level4_pgt - __START_KERNEL_map + phys_base
 
 	/* Ensure I am executing from virtual addresses */
 	movq	$1f, %rax
@@ -178,33 +183,54 @@ ENTRY(secondary_startup_64)
 1:
 
 	/* Check if nx is implemented */
+	; 检查CPU是否支持 NX 位
 	movl	$0x80000001, %eax
-	cpuid
+	cpuid	; 执行 cpuid 指令来得到处理器信息。这条指令的结果会存放在 edx 中，我们把他再放到 edi 里
 	movl	%edx,%edi
 
 	/* Setup EFER (Extended Feature Enable Register) */
-	movl	$MSR_EFER, %ecx
-	rdmsr
-	btsl	$_EFER_SCE, %eax	/* Enable System Call */
-	btl	$20,%edi		/* No Execute supported? */
+	movl	$MSR_EFER, %ecx	; 把 MSR_EFER （即 0xc0000080）放入 ecx
+	rdmsr	; 执行 rdmsr 指令来读取CPU中的Model Specific Register (MSR), 返回结果将存放于 edx:eax 
+; 63                                                                              32
+;  --------------------------------------------------------------------------------
+; |                                                                               |
+; |                                Reserved MBZ                                   |
+; |                                                                               |
+;  --------------------------------------------------------------------------------
+; 31                            16  15      14      13   12  11   10  9  8 7  1   0
+;  --------------------------------------------------------------------------------
+; |                              | T |       |       |    |   |   |   |   |   |   |
+; | Reserved MBZ                 | C | FFXSR | LMSLE |SVME|NXE|LMA|MBZ|LME|RAZ|SCE|
+; |                              | E |       |       |    |   |   |   |   |   |   |
+;  --------------------------------------------------------------------------------
+	btsl	$_EFER_SCE, %eax	/* Enable System Call */; 将 _EFER_SCE （即第0位）置1，设置 SCE 位将会启用 SYSCALL 以及 SYSRET 指令。
+	btl	$20,%edi		/* No Execute supported? */; ;检查 edi（即 cpuid 的结果（见上）） 中的第20位。如果第 20 位（即 NX 位）置位，我们就只把 EFER_SCE写入MSR。
 	jnc     1f
-	btsl	$_EFER_NX, %eax
-1:	wrmsr				/* Make changes effective */
+	btsl	$_EFER_NX, %eax	; 如果支持 NX 那么我们就把 _EFER_NX 也写入MSR。
+1:	wrmsr				/* Make changes effective */; 写回 edx:eax 寄存器中的值到 MSR 中
 
 	/* Setup cr0 */
+; X86_CR0_PE - 系统处于保护模式;
+; X86_CR0_MP - 与CR0的TS标志位一同控制 WAIT/FWAIT 指令的功能；
+; X86_CR0_ET - 386允许指定外部数学协处理器为80287或80387;
+; X86_CR0_NE - 如果置位，则启用内置的x87浮点错误报告，否则启用PC风格的x87错误检测；
+; X86_CR0_WP - 如果置位，则CPU在特权等级为0时无法写入只读内存页;
+; X86_CR0_AM - 当AM位置位、EFLGS中的AC位置位、特权等级为3时，进行对齐检查;
+; X86_CR0_PG - 启用分页.
 #define CR0_STATE	(X86_CR0_PE | X86_CR0_MP | X86_CR0_ET | \
 			 X86_CR0_NE | X86_CR0_WP | X86_CR0_AM | \
 			 X86_CR0_PG)
 	movl	$CR0_STATE, %eax
 	/* Make changes effective */
-	movq	%rax, %cr0
+	movq	%rax, %cr0	; 设置 cr0
 
 	/* Setup a boot time stack */
-	movq stack_start(%rip),%rsp
+	; 为了从汇编执行C语言代码，我们需要建立一个栈。
+	movq stack_start(%rip),%rsp	; 首先将栈指针 指向一个内存中合适的区域，然后重置FLAGS寄存器
 
 	/* zero EFLAGS after setting rsp */
 	pushq $0
-	popfq
+	popfq	; pop to flags
 
 	/*
 	 * We must switch to a new descriptor in kernel space for the GDT
@@ -212,7 +238,7 @@ ENTRY(secondary_startup_64)
 	 * addresses where we're currently running on. We have to do that here
 	 * because in 32bit we couldn't load a 64bit linear address.
 	 */
-	lgdt	early_gdt_descr(%rip)
+	lgdt	early_gdt_descr(%rip)	; @zouyalong 加载 GDT。需要重新加载 全局描述附表 的原因是，虽然目前内核工作在用户空间的低地址中，但很快内核将会在它自己的内存地址空间中运行。
 
 	/* set up data segments */
 	xorl %eax,%eax
@@ -235,14 +261,15 @@ ENTRY(secondary_startup_64)
 	 * located at %gs:40.  Note that, on SMP, the boot cpu uses
 	 * init data section till per cpu areas are set up.
 	 */
-	movl	$MSR_GS_BASE,%ecx
+	movl	$MSR_GS_BASE,%ecx	; 把 MSR_GS_BASE （即 0xc0000101）放入 ecx
 	movl	initial_gs(%rip),%eax
 	movl	initial_gs+4(%rip),%edx
-	wrmsr	
+	wrmsr	; 向 eax 和 edx 处的地址加载数据（即指向 initial_gs）。
+	; cs, fs, ds 和 ss 段寄存器在64位模式下不用来寻址，但 fs 和 gs 可以使用。 fs 和 gs 有一个隐含的部分（与实模式下的 cs 段寄存器类似），这个隐含部分存储了一个描述符，其指向 Model Specific Registers。因此上面的 0xc0000101 是一个 gs.base MSR 地址。当发生系统调用 或者 中断时，入口点处并没有内核栈，因此 MSR_GS_BASE 将会用来存放中断栈。在中断处理程序中，我们可以通过 gs.base 来访问中断栈。
 
 	/* esi is pointer to real mode structure with interesting info.
 	   pass it to C */
-	movl	%esi, %edi
+	movl	%esi, %edi	; 把实模式中的 bootparam 结构的地址放入 rdi (要记得 rsi 从一开始就保存了这个结构体的指针)
 	
 	/* Finally jump to run C code and to be on real kernel address
 	 * Since we are running on identity-mapped space we have to jump
@@ -250,11 +277,11 @@ ENTRY(secondary_startup_64)
 	 * jump.  In addition we need to ensure %cs is set so we make this
 	 * a far return.
 	 */
-	movq	initial_code(%rip),%rax
+	movq	initial_code(%rip),%rax	; x86_64_start_kernel()
 	pushq	$0		# fake return address to stop unwinder
 	pushq	$__KERNEL_CS	# set correct cs
 	pushq	%rax		# target address in negative space
-	lretq
+	lretq	; 使用 lretq 指令来跳转到 x86_64_start_kernel() 函数。不使用 jump、call的原因是要保证 cs 的正确性。
 
 	/* SMP bootup changes these two */
 	__REFDATA
@@ -265,8 +292,8 @@ ENTRY(secondary_startup_64)
 	.quad	INIT_PER_CPU_VAR(irq_stack_union)
 
 	ENTRY(stack_start)
-	.quad  init_thread_union+THREAD_SIZE-8
-	.word  0
+	.quad  init_thread_union+THREAD_SIZE-8	; 为了从汇编执行C语言代码，我们需要建立一个栈。
+	.word  0; -8 留下的空间，用来保护对下一个内存页的非法访问。
 	__FINITDATA
 
 bad_address:
@@ -407,9 +434,9 @@ NEXT_PAGE(level2_spare_pgt)
 	.align 16
 	.globl early_gdt_descr
 early_gdt_descr:
-	.word	GDT_ENTRIES*8-1
+	.word	GDT_ENTRIES*8-1	; GDT_ENTRIES = 32, 全局描述符表包含了32项，用于内核代码、数据、线程局部存储段
 early_gdt_descr_base:
-	.quad	INIT_PER_CPU_VAR(gdt_page)
+	.quad	INIT_PER_CPU_VAR(gdt_page) ; @zouyalong gdt_page 定义在 arch/x86/include/asm/desc.h 中，此宏展开后是： init_per_cpu__gdt_page，在 linker script 中，INIT_PER_CPU 使用此变量得到新GDT的正确的基地址。
 
 ENTRY(phys_base)
 	/* This must match the first entry in level2_kernel_pgt */

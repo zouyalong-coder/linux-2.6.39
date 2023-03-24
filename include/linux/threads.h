@@ -17,6 +17,7 @@
 #endif
 
 /* Places which use this should consider cpumask_var_t. */
+// @zouyalong: 这里定义的是最大支持的CPU数目，由于每个 CPU 会分配一个内存区域，所以并不是越大越好。
 #define NR_CPUS		CONFIG_NR_CPUS
 
 #define MIN_THREADS_LEFT_FOR_ROOT 4
