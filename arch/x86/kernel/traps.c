@@ -812,10 +812,12 @@ dotraplinkage void do_iret_error(struct pt_regs *regs, long error_code)
 #endif
 
 /* Set of traps needed for early debugging. */
+// @zouyalong: 初始化早期调试所需的中断处理函数
 void __init early_trap_init(void)
 {
 	set_intr_gate_ist(1, &debug, DEBUG_STACK);
 	/* int3 can be called from all */
+	// 初始化调试功能 （#DB -当 TF 标志位和rflags被设置时会被使用）和 int3 （#BP）中断门。
 	set_system_intr_gate_ist(3, &int3, DEBUG_STACK);
 	set_intr_gate(14, &page_fault);
 	load_idt(&idt_descr);

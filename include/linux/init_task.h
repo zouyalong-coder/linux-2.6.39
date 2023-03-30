@@ -127,6 +127,12 @@ extern struct cred init_cred;
 /*
  *  INIT_TASK is used to set up the first task table, touch at
  * your own risk!. Base=0, limit=0x1fffff (=2MB)
+ * @zouyalong: 设置和初始化了第一个进程来(0号进程)的值。
+ * 初始化进程状态为 zero 或者 runnable. 一个可运行进程即为等待CPU去运行;
+初始化仅存的标志位 - PF_KTHREAD 意思为 - 内核线程;
+一个可运行的任务列表;
+进程地址空间;
+初始化进程堆栈 &init_thread_info - init_thread_union.thread_info 和 initthread_union 使用共用体 - thread_union 包含了 thread_info进程信息以及进程栈:。
  */
 #define INIT_TASK(tsk)	\
 {									\

@@ -14,14 +14,15 @@ ENTRY(clear_page_c)
 	CFI_ENDPROC
 ENDPROC(clear_page_c)
 
+; @zouyalong: 清除一个页的内容
 ENTRY(clear_page)
-	CFI_STARTPROC
-	xorl   %eax,%eax
-	movl   $4096/64,%ecx
+	CFI_STARTPROC	; .cfi_startproc, 用于调试
+	xorl   %eax,%eax	; rax = 0
+	movl   $4096/64,%ecx; 64 个字节清理一次
 	.p2align 4
 .Lloop:
 	decl	%ecx
-#define PUT(x) movq %rax,x*8(%rdi)
+#define PUT(x) movq %rax,x*8(%rdi)	; rax 
 	movq %rax,(%rdi)
 	PUT(1)
 	PUT(2)

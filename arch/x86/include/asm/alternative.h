@@ -36,6 +36,7 @@
 		".previous\n"			\
 		"671:"
 
+// @zouyalong: x86 lock 指令，告诉 CPU 当指令执行时占据系统总线。这允许 CPU 同步内存访问，防止多核（或多设备 - 比如 DMA 控制器）并发访问同一个内存cell。
 #define LOCK_PREFIX LOCK_PREFIX_HERE "\n\tlock; "
 
 #else /* ! CONFIG_SMP */

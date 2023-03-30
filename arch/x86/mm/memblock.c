@@ -240,6 +240,7 @@ u64 __init memblock_x86_memory_in_range(u64 addr, u64 limit)
 	return __memblock_x86_memory_in_range(addr, limit, false);
 }
 
+// @zouyalong: 保留内存区域
 void __init memblock_x86_reserve_range(u64 start, u64 end, char *name)
 {
 	if (start == end)

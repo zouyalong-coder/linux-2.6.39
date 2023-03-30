@@ -37,6 +37,7 @@ typedef struct { pteval_t pte; } pte_t;
  * page table can map
  */
 #define PMD_SHIFT	21
+// @zouyalong: 512 * 8B = 4KB
 #define PTRS_PER_PMD	512
 
 /*
@@ -52,8 +53,10 @@ typedef struct { pteval_t pte; } pte_t;
 #define PGDIR_MASK	(~(PGDIR_SIZE - 1))
 
 /* See Documentation/x86/x86_64/mm.txt for a description of the memory map. */
-#define MAXMEM		 _AC(__AC(1, UL) << MAX_PHYSMEM_BITS, UL)
+#define MAXMEM		 _AC(__AC(1, UL) << MAX_PHYSMEM_BITS, UL) // 1 << 32
+// @zouyalong: 虚拟地址空间的起始地址
 #define VMALLOC_START    _AC(0xffffc90000000000, UL)
+// @zouyalong: 虚拟地址空间的结束地址
 #define VMALLOC_END      _AC(0xffffe8ffffffffff, UL)
 #define VMEMMAP_START	 _AC(0xffffea0000000000, UL)
 #define MODULES_VADDR    _AC(0xffffffffa0000000, UL)

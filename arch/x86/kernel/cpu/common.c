@@ -81,6 +81,7 @@ static const struct cpu_dev __cpuinitconst default_cpu = {
 	.c_x86_vendor	= X86_VENDOR_UNKNOWN,
 };
 
+// @zouyalong: 初始 CPU 设备
 static const struct cpu_dev *this_cpu __cpuinitdata = &default_cpu;
 
 DEFINE_PER_CPU_PAGE_ALIGNED(struct gdt_page, gdt_page) = { .gdt = {
@@ -361,6 +362,7 @@ void switch_to_new_gdt(int cpu)
 	load_percpu_segment(cpu);
 }
 
+// zouyalong: 系统支持的厂商列表，由 cpu_dev_register 进行注册
 static const struct cpu_dev *__cpuinitdata cpu_devs[X86_VENDOR_NUM] = {};
 
 static void __cpuinit get_model_name(struct cpuinfo_x86 *c)
@@ -489,6 +491,9 @@ out:
 #endif
 }
 
+/**
+ * @zouyalong: 通过 vendor_id 查询 cpu vender 的信息。 
+ */
 static void __cpuinit get_cpu_vendor(struct cpuinfo_x86 *c)
 {
 	char *v = c->x86_vendor_id;
@@ -516,6 +521,7 @@ static void __cpuinit get_cpu_vendor(struct cpuinfo_x86 *c)
 	this_cpu = &default_cpu;
 }
 
+/// @zouyalong: 通过 cpuid 指令获取 cpu 的信息
 void __cpuinit cpu_detect(struct cpuinfo_x86 *c)
 {
 	/* Get vendor name */
@@ -632,11 +638,12 @@ static void __cpuinit identify_cpu_without_cpuid(struct cpuinfo_x86 *c)
  *
  * WARNING: this function is only called on the BP.  Don't add code here
  * that is supposed to run on all CPUs.
+ * @zouyalong: 确认 cpu 身份，读取 cpu 的 vendor id，family，model，mask，cache alignment 等信息
  */
 static void __init early_identify_cpu(struct cpuinfo_x86 *c)
 {
 #ifdef CONFIG_X86_64
-	c->x86_clflush_size = 64;
+	c->x86_clflush_size = 64;	// 填充默认值，在 cpu_detect 中会被覆盖
 	c->x86_phys_bits = 36;
 	c->x86_virt_bits = 48;
 #else
@@ -656,11 +663,11 @@ static void __init early_identify_cpu(struct cpuinfo_x86 *c)
 	if (!have_cpuid_p())
 		return;
 
-	cpu_detect(c);
+	cpu_detect(c);	// 读取 cpu 信息
 
-	get_cpu_vendor(c);
+	get_cpu_vendor(c); // vendor id -> vendor name
 
-	get_cpu_cap(c);
+	get_cpu_cap(c); // 读取 cpu 的 capability
 
 	if (this_cpu->c_early_init)
 		this_cpu->c_early_init(c);
@@ -671,6 +678,7 @@ static void __init early_identify_cpu(struct cpuinfo_x86 *c)
 	filter_cpuid_features(c, false);
 }
 
+// @zouyalong: 收集 CPU 列表和信息。
 void __init early_cpu_init(void)
 {
 	const struct cpu_dev *const *cdev;
@@ -701,6 +709,7 @@ void __init early_cpu_init(void)
 		}
 #endif
 	}
+	// @zouyalong: 将 CPU 信息保存到 boot_cpu_data 中。
 	early_identify_cpu(&boot_cpu_data);
 }
 
@@ -1006,6 +1015,7 @@ static __init int setup_disablecpuid(char *arg)
 __setup("clearcpuid=", setup_disablecpuid);
 
 #ifdef CONFIG_X86_64
+// @zouyalong: 指向 idt_table 的描述符
 struct desc_ptr idt_descr = { NR_VECTORS * 16 - 1, (unsigned long) idt_table };
 
 DEFINE_PER_CPU_FIRST(union irq_stack_union,

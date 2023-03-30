@@ -147,7 +147,9 @@ static inline phys_addr_t virt_to_phys(volatile void *address)
  *	almost all conceivable cases a device driver should not be using
  *	this function
  */
-
+/**
+ * @zouyalong: phys_to_virt 函数与 __va 基本一样，区别在于 phys_to_virt 的参数类型 phys_addr_t 的定义依赖于 CONFIG_PHYS_ADDR_T_64BIT
+*/
 static inline void *phys_to_virt(phys_addr_t address)
 {
 	return __va(address);

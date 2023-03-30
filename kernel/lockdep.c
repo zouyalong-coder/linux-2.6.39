@@ -3570,6 +3570,7 @@ out_restore:
 	raw_local_irq_restore(flags);
 }
 
+// @zouyalong: 初始化 lock validator.
 void lockdep_init(void)
 {
 	int i;

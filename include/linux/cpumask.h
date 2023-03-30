@@ -10,6 +10,7 @@
 #include <linux/threads.h>
 #include <linux/bitmap.h>
 
+// @zouyalong: bitmap for CPU
 typedef struct cpumask { DECLARE_BITMAP(bits, NR_CPUS); } cpumask_t;
 
 /**

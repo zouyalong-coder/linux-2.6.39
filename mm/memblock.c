@@ -20,6 +20,7 @@
 #include <linux/seq_file.h>
 #include <linux/memblock.h>
 
+// @zouyalong: 全局 memblock,内部维护了 memory/reserved 两个 region 的数组。
 struct memblock memblock __initdata_memblock;
 
 int memblock_debug __initdata_memblock;
@@ -273,6 +274,11 @@ extern int __init_memblock __weak memblock_memory_can_coalesce(phys_addr_t addr1
 	return 1;
 }
 
+/// @zouyalong: 
+/// @param type 
+/// @param base: 物理地址
+/// @param size: 大小
+/// @return 
 static long __init_memblock memblock_add_region(struct memblock_type *type,
 						phys_addr_t base, phys_addr_t size)
 {
@@ -470,6 +476,7 @@ long __init_memblock memblock_free(phys_addr_t base, phys_addr_t size)
 	return __memblock_remove(&memblock.reserved, base, size);
 }
 
+// @zouyalong: 内存块概念可以参考 https://github.com/MintCN/linux-insides-zh/blob/master/Initialization/linux-initialization-3.md#linux%E5%86%85%E6%A0%B8%E7%AE%A1%E7%90%86%E6%A1%86%E6%9E%B6%E5%88%9D%E6%8E%A2
 long __init_memblock memblock_reserve(phys_addr_t base, phys_addr_t size)
 {
 	struct memblock_type *_rgn = &memblock.reserved;

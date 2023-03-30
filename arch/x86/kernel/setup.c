@@ -337,6 +337,7 @@ static void __init relocate_initrd(void)
 
 	/* Note: this includes all the lowmem currently occupied by
 	   the initrd, we rely on that fact to keep the data intact. */
+	   // @zouyalong: 保留内存块将ramdisk传输到最终的内存地址
 	memblock_x86_reserve_range(ramdisk_here, ramdisk_here + area_size, "NEW RAMDISK");
 	initrd_start = ramdisk_here + PAGE_OFFSET;
 	initrd_end   = initrd_start + ramdisk_size;
@@ -378,6 +379,7 @@ static void __init relocate_initrd(void)
 		ramdisk_here, ramdisk_here + ramdisk_size - 1);
 }
 
+/// @zouyalong: 为根文件系统保留内存。此函数获取RAM DISK的基地址、RAM DISK的大小以及RAM DISK的结束地址
 static void __init reserve_initrd(void)
 {
 	/* Assume only end is not page aligned */
@@ -715,10 +717,10 @@ void __init setup_arch(char **cmdline_p)
 	 * If we have OLPC OFW, we might end up relocating the fixmap due to
 	 * reserve_top(), so do this before touching the ioremap area.
 	 */
-	olpc_ofw_detect();
+	olpc_ofw_detect();	// 检查是否支持olpc ofw
 
 	early_trap_init();
-	early_cpu_init();
+	early_cpu_init();	// 初始化 boot_cpu。
 	early_ioremap_init();
 
 	setup_olpc_ofw_pgd();
@@ -949,7 +951,7 @@ void __init setup_arch(char **cmdline_p)
 		init_ohci1394_dma_on_all_controllers();
 #endif
 
-	reserve_initrd();
+	reserve_initrd();	// @zouyalong: 根文件系统
 
 	reserve_crashkernel();
 

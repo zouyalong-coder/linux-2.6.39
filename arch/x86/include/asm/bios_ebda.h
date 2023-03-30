@@ -7,6 +7,7 @@
  * there is a real-mode segmented pointer pointing to the
  * 4K EBDA area at 0x40E.
  */
+// @zouyalong: 将物理地址 0x40E 转换为虚拟地址，0x0040:0x000e 就是包含有扩展BIOS数据区域基地址的代码段。
 static inline unsigned int get_bios_ebda(void)
 {
 	unsigned int address = *(unsigned short *)phys_to_virt(0x40E);

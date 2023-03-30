@@ -360,6 +360,7 @@ END(save_rest)
 
 /* save complete stack frame */
 	.pushsection .kprobes.text, "ax"
+; @zouyalong: 把所有的通用寄存器存储到栈中，如果需要的话会用户态 gs 切换到内核态 gs
 ENTRY(save_paranoid)
 	XCPT_FRAME 1 RDI+8
 	cld
@@ -383,7 +384,7 @@ ENTRY(save_paranoid)
 	rdmsr
 	testl %edx,%edx
 	js 1f	/* negative -> in kernel */
-	SWAPGS
+	SWAPGS	; @zouyalong: 切换到内核态 gs
 	xorl %ebx,%ebx
 1:	ret
 	CFI_ENDPROC
@@ -1076,7 +1077,7 @@ END(\sym)
 ENTRY(\sym)
 	XCPT_FRAME
 	PARAVIRT_ADJUST_EXCEPTION_FRAME
-	subq $ORIG_RAX-R15, %rsp
+	subq $ORIG_RAX-R15, %rsp	; @zouyalong: ORIG_RAX-R15 是 120 字节。 我们在中断处理过程中需要把所有的寄存器信息存储在栈中，所有通用寄存器会占用这个 120 字节。
 	CFI_ADJUST_CFA_OFFSET ORIG_RAX-R15
 	call error_entry
 	DEFAULT_FRAME 0
@@ -1500,7 +1501,7 @@ ENTRY(nmi)
 	DISABLE_INTERRUPTS(CLBR_NONE)
 	testl %ebx,%ebx				/* swapgs needed? */
 	jnz nmi_restore
-	testl $3,CS(%rsp)
+	testl $3,CS(%rsp)	; @zouyalong: 查看段寄存器 CS 的前两个比特位。你应该记得 CS 寄存器包含段选择器，它的前两个比特是 RPL。所有的权限等级是0-3范围内的整数。 数字越小代表权限越高。
 	jnz nmi_userspace
 nmi_swapgs:
 	SWAPGS_UNSAFE_STACK

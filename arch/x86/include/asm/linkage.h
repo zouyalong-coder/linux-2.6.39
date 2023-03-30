@@ -4,6 +4,7 @@
 #include <linux/stringify.h>
 
 #undef notrace
+	// @zouyalong: no_instrument_function 告诉编译器函数调用不产生环境变量(堆栈空间)
 #define notrace __attribute__((no_instrument_function))
 
 #ifdef CONFIG_X86_32

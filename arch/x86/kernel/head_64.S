@@ -376,6 +376,7 @@ ENTRY(name)
 	 * 0xffffffff80000000 to physical address 0x000000. (always using
 	 * 2Mbyte large pages provided by PAE mode)
 	 */
+; @zouyalong: 内核的代码段、数据段和 bss 段映射了前 2.5G 个字节的虚拟地址空间。这里的 2.5G 是指 2^39 字节。
 NEXT_PAGE(init_level4_pgt)
 	.quad	level3_ident_pgt - __START_KERNEL_map + _KERNPG_TABLE	; 第一项指向一致映射的页表项
 	.org	init_level4_pgt + L4_PAGE_OFFSET*8, 0

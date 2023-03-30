@@ -418,10 +418,10 @@ void __init parse_early_param(void)
 /*
  *	Activate the first processor.
  */
-
+/// @zouyalong: 通过掩码初始化每一个CPU
 static void __init boot_cpu_init(void)
 {
-	int cpu = smp_processor_id();
+	int cpu = smp_processor_id();//0
 	/* Mark the boot cpu "present", "online" etc for SMP and UP case */
 	set_cpu_online(cpu, true);
 	set_cpu_active(cpu, true);
@@ -455,18 +455,20 @@ static void __init mm_init(void)
 }
 
 // @zouyalong: 开始kernel. called from arch/x86/kernel/head64.c
+// 第一次进入架构无关代码。
+// 主要目的是完成内核初始化并启动祖先进程(1号进程)
 asmlinkage void __init start_kernel(void)
 {
-	char * command_line;
+	char * command_line;// 内核命令行的全局指针
 	extern const struct kernel_param __start___param[], __stop___param[];
 
-	smp_setup_processor_id();
+	smp_setup_processor_id();	// x86 上什么都不做
 
 	/*
 	 * Need to run as early as possible, to initialize the
 	 * lockdep hash:
 	 */
-	lockdep_init();
+	lockdep_init();	// @zouyalong: 初始化锁依赖
 	debug_objects_early_init();
 
 	/*
@@ -484,7 +486,7 @@ asmlinkage void __init start_kernel(void)
  * enable them
  */
 	tick_init();
-	boot_cpu_init();
+	boot_cpu_init();	// 初始化第一个cpu
 	page_address_init();
 	printk(KERN_NOTICE "%s", linux_banner);
 	setup_arch(&command_line);

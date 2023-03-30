@@ -15,6 +15,7 @@
 #define IRQ_STACK_ORDER 2
 #define IRQ_STACK_SIZE (PAGE_SIZE << IRQ_STACK_ORDER)
 
+// @zouyalong: 以下都是中断栈的offset，指向 tss 中的中断栈表。
 #define STACKFAULT_STACK 1
 #define DOUBLEFAULT_STACK 2
 #define NMI_STACK 3

@@ -56,6 +56,7 @@
 
 #define FUTEXFS_SUPER_MAGIC	0xBAD1DEA
 
+// @zouyalong: 线程栈栈底标记，避免栈溢出
 #define STACK_END_MAGIC		0x57AC6E9D
 
 #define DEVPTS_SUPER_MAGIC	0x1cd1

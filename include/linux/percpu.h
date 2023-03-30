@@ -26,6 +26,14 @@
  * Must be an lvalue. Since @var must be a simple identifier,
  * we force a syntax error here if it isn't.
  */
+/**
+ * @zouyalong: 获取当前 CPU 的 percpu 变量 @var 的地址。必须与 put_cpu_var() 配对使用。且进行了禁止抢占。所以使用范围要尽量小。
+#define get_cpu_var(var)                    \
+(*({                                        \
+    preempt_disable();                      \
+    &var + __per_cpu_offset[raw_smp_processor_id()]  \
+}))
+*/
 #define get_cpu_var(var) (*({				\
 	preempt_disable();				\
 	&__get_cpu_var(var); }))
@@ -88,16 +96,17 @@ struct pcpu_group_info {
 						 * entries contain NR_CPUS */
 };
 
+// @zouyalong: 用于 percpu 内存的描述
 struct pcpu_alloc_info {
-	size_t			static_size;
-	size_t			reserved_size;
-	size_t			dyn_size;
-	size_t			unit_size;
+	size_t			static_size;//静态 percpu 变量的 size，等于 __per_cpu_end - __per_cpu_start，这两个变量的定义在连接脚本中。
+	size_t			reserved_size;//保留内存区
+	size_t			dyn_size;//动态申请内存区
+	size_t			unit_size;//每个 cpu 所占的 percpu 内存是一个 unit，该成员表示 unit 的大小。
 	size_t			atom_size;
-	size_t			alloc_size;
+	size_t			alloc_size;//申请内存的size
 	size_t			__ai_size;	/* internal, don't use */
-	int			nr_groups;	/* 0 if grouping unnecessary */
-	struct pcpu_group_info	groups[];
+	int			nr_groups;	/* 0 if grouping unnecessary.cpu 分组个数 */
+	struct pcpu_group_info	groups[];//每组 cpu 对应的 percpu 内存描述信息
 };
 
 enum pcpu_fc {

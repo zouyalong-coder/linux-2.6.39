@@ -17,6 +17,9 @@
  * into it (errata #56). Usually the page is reserved anyways,
  * unless you have no PS/2 mouse plugged in.
  */
+/**
+ * @zouyalong: 为 EBDA（即Extended BIOS Data Area，扩展BIOS数据区域）预留空间。扩展BIOS预留区域位于常规内存顶部（译注：常规内存（Conventiional Memory）是指前640K字节内存），包含了端口、磁盘参数等数据。
+*/
 void __init reserve_ebda_region(void)
 {
 	unsigned int lowmem, ebda_addr;
@@ -27,15 +30,16 @@ void __init reserve_ebda_region(void)
 	/* that area is absent. We'll just have to assume */
 	/* that the paravirt case can handle memory setup */
 	/* correctly, without our help. */
+	// 如果开启了半虚拟化，那么就退出, 因为此时没有扩展BIOS数据区域。
 	if (paravirt_enabled())
 		return;
 
 	/* end of low (conventional) memory */
-	lowmem = *(unsigned short *)__va(BIOS_LOWMEM_KILOBYTES);
-	lowmem <<= 10;
+	lowmem = *(unsigned short *)__va(BIOS_LOWMEM_KILOBYTES);	// 低地址内存的末尾地址(单位: KB)
+	lowmem <<= 10;	// 单位: B
 
 	/* start of EBDA area */
-	ebda_addr = get_bios_ebda();
+	ebda_addr = get_bios_ebda();	// 获得扩展BIOS数据区域的地址.
 
 	/* Fixup: bios puts an EBDA in the top 64K segment */
 	/* of conventional memory, but does not adjust lowmem. */

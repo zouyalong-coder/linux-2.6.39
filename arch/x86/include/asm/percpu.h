@@ -52,6 +52,7 @@
  * Compared to the generic __my_cpu_offset version, the following
  * saves one instruction and avoids clobbering a temp register.
  */
+/// @zouyalong: 获取当前 cpu 上对应的 var 变量地址。
 #define __this_cpu_ptr(ptr)				\
 ({							\
 	unsigned long tcp_ptr__;			\

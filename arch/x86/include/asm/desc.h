@@ -31,6 +31,7 @@ static inline void fill_ldt(struct desc_struct *desc,
 }
 
 extern struct desc_ptr idt_descr;
+/// 定义在 arch/x86/kernel/head_64.S 中
 extern gate_desc idt_table[];
 
 
@@ -335,7 +336,7 @@ static inline void _set_gate(int gate, unsigned type, void *addr,
  */
 static inline void set_intr_gate(unsigned int n, void *addr)
 {
-	BUG_ON((unsigned)n > 0xFF);
+	BUG_ON((unsigned)n > 0xFF);	// 只有 256 个中断
 	_set_gate(n, GATE_INTERRUPT, addr, 0, 0, __KERNEL_CS);
 }
 

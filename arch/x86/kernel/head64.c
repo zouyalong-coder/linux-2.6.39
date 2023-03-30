@@ -42,6 +42,7 @@ static void __init clear_bss(void)
 	       (unsigned long) __bss_stop - (unsigned long) __bss_start);
 }
 
+// @zouyalong: 把 boot_params 结构体拷贝到 boot_params 全局变量（）中。这个拷贝的原因是把该信息存放在内核的数据段中，而不是早期实模式的地址范围内。
 static void __init copy_bootdata(char *real_mode_data)
 {
 	char * command_line;
@@ -53,7 +54,8 @@ static void __init copy_bootdata(char *real_mode_data)
 	}
 }
 
-// @zouyalong: 从这里开始，就是真正的内核启动了
+// @zouyalong: 从这里开始，就是真正的内核启动了。 从 head_64.S 中跳转到这里。
+// real_mode_data 从 rdi 寄存器中传递过来，指向 boot_params 结构体。
 void __init x86_64_start_kernel(char * real_mode_data)
 {
 	int i;
@@ -81,10 +83,13 @@ void __init x86_64_start_kernel(char * real_mode_data)
 
 	max_pfn_mapped = KERNEL_IMAGE_SIZE >> PAGE_SHIFT;
 
+	// @zouyalong: 初始化异常处理. 目前仅仅是打印。
 	for (i = 0; i < NUM_EXCEPTION_VECTORS; i++) {
 #ifdef CONFIG_EARLY_PRINTK
+	// 在 arch/x86/kernel/head_64.S 中定义。中断发生时只是简单的打印一下
 		set_intr_gate(i, &early_idt_handlers[i]);
 #else
+		// 在 arch/x86/kernel/head_64.S 中定义。中断发生时只是简单的打印一下。
 		set_intr_gate(i, early_idt_handler);
 #endif
 	}
@@ -98,6 +103,7 @@ void __init x86_64_start_kernel(char * real_mode_data)
 
 void __init x86_64_start_reservations(char *real_mode_data)
 {
+	// @zouyalong: 把 boot_params 存起来。
 	copy_bootdata(__va(real_mode_data));
 
 	memblock_init();
@@ -115,6 +121,7 @@ void __init x86_64_start_reservations(char *real_mode_data)
 	}
 #endif
 
+	// @zouyalong: 先保留，过后使用。
 	reserve_ebda_region();
 
 	/*

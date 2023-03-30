@@ -183,7 +183,8 @@
 
 #include <linux/types.h>
 
-/* PTE_PFN_MASK extracts the PFN from a (pte|pmd|pud|pgd)val_t */
+/* PTE_PFN_MASK extracts the PFN from a (pte|pmd|pud|pgd)val_t 
+	@zouyalong: 一个46bit大小的页帧屏蔽值*/
 #define PTE_PFN_MASK		((pteval_t)PHYSICAL_PAGE_MASK)
 
 /* PTE_FLAGS_MASK extracts the flags from a (pte|pmd|pud|pgd)val_t */

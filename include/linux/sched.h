@@ -2047,6 +2047,24 @@ void yield(void);
  */
 extern struct exec_domain	default_exec_domain;
 
+// @zouyalong: thread_info 与任务栈共用一个内存区域，栈向下生长。
+/**
++-----------------------+
+|                       |
+|                       |
+|        stack          |
+|                       |
+|_______________________|
+|          |            |
+|          |            |
+|          |            |
+|__________↓____________|             +--------------------+
+|                       |             |                    |
+|      thread_info      |<----------->|     task_struct    |
+|                       |             |                    |
++-----------------------+             +--------------------+ 
+ * 
+ */
 union thread_union {
 	struct thread_info thread_info;
 	unsigned long stack[THREAD_SIZE/sizeof(long)];

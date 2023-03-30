@@ -96,15 +96,17 @@
 #define __pcpu_ptr_to_addr(ptr)		(void __force *)(ptr)
 #endif	/* CONFIG_SMP */
 
+// @zouyalong: 描述每一片 percpu 内存
 struct pcpu_chunk {
-	struct list_head	list;		/* linked to pcpu_slot lists */
-	int			free_size;	/* free bytes in the chunk */
+	struct list_head	list;		/* linked to pcpu_slot lists *///链表节点，当前 chunk 被连接到 pcpu_slot 链表中
+	int			free_size;	/* free bytes in the chunk *///当前 chunk 空闲的空间
+
 	int			contig_hint;	/* max contiguous size hint */
-	void			*base_addr;	/* base address of this chunk */
+	void			*base_addr;	/* base address of this chunk *///当前 chunk 的起始地址
 	int			map_used;	/* # of map entries used */
 	int			map_alloc;	/* # of map entries allocated */
 	int			*map;		/* allocation map */
-	void			*data;		/* chunk data */
+	void			*data;		/* chunk data *///chunk 数据
 	bool			immutable;	/* no [de]population allowed */
 	unsigned long		populated[];	/* populated bitmap */
 };
@@ -121,6 +123,14 @@ static unsigned int pcpu_first_unit_cpu __read_mostly;
 static unsigned int pcpu_last_unit_cpu __read_mostly;
 
 /* the address of the first chunk which starts with the kernel static area */
+/**
+ * 举个例子：静态 percpu 内存加载地址为 0x1000，申请的 percpu 内存基地址为 0x8000，unit_size 为 0x2000，所以 cpu0 的 percpu 内存偏移为 (0x8000-0x1000)+0*0x2000 = 0x7000 ,cpu1 的 percpu 内存偏移为 (0x8000-0x1000)+1*0x2000 = 0x9000,以此类推。
+ * 
+ * 当访问一个静态 percpu 变量时，它的地址可能位于 0x1004, cpu0 对应的该变量副本地址就是 0x1004+0x7000=0x8004,cpu1 对应的该变量副本地址就是 0x1004+0x7000+0x2000=0xA004。
+ * 当然，这只是个示例，实际情况下的地址分配并没有这么随心所欲。
+ * 
+ */
+/// @zouyalong: 全局变量，用于保存 percpu 区域的起始地址
 void *pcpu_base_addr __read_mostly;
 EXPORT_SYMBOL_GPL(pcpu_base_addr);
 
@@ -1336,6 +1346,7 @@ int __init pcpu_setup_first_chunk(const struct pcpu_alloc_info *ai,
 	pcpu_chunk_relocate(pcpu_first_chunk, -1);
 
 	/* we're done */
+	// @zouyalong: 设置全局base_addr，方便后续访问。
 	pcpu_base_addr = base_addr;
 	return 0;
 }
@@ -1544,12 +1555,13 @@ static struct pcpu_alloc_info * __init pcpu_build_alloc_info(
 
 #if defined(BUILD_EMBED_FIRST_CHUNK)
 /**
+ * @zouyalong: 
  * pcpu_embed_first_chunk - embed the first percpu chunk into bootmem
  * @reserved_size: the size of reserved percpu area in bytes
  * @dyn_size: minimum free size for dynamic allocation in bytes
  * @atom_size: allocation atom size
  * @cpu_distance_fn: callback to determine distance between cpus, optional
- * @alloc_fn: function to allocate percpu page
+ * @alloc_fn: function to allocate percpu page。此时 slab/buddy 内存管理器都还没有初始化，所以都是用的 bootmem 分配器
  * @free_fn: function to free percpu page
  *
  * This is a helper to ease setting up embedded first percpu chunk and
@@ -1587,14 +1599,17 @@ int __init pcpu_embed_first_chunk(size_t reserved_size, size_t dyn_size,
 	size_t size_sum, areas_size, max_distance;
 	int group, i, rc;
 
+	// @zouyalong: 申请一个 struct pcpu_alloc_info 结构成员，该结构成员负责描述系统内 percpu 内存。
 	ai = pcpu_build_alloc_info(reserved_size, dyn_size, atom_size,
 				   cpu_distance_fn);
 	if (IS_ERR(ai))
 		return PTR_ERR(ai);
 
+	// @zouaylong: 计算 percpu 内存总大小，包括静态区域、保留区域和动态区域。
 	size_sum = ai->static_size + ai->reserved_size + ai->dyn_size;
 	areas_size = PFN_ALIGN(ai->nr_groups * sizeof(void *));
 
+	// @zouyalong: 申请 percpu 内存
 	areas = alloc_bootmem_nopanic(areas_size);
 	if (!areas) {
 		rc = -ENOMEM;
@@ -1612,6 +1627,7 @@ int __init pcpu_embed_first_chunk(size_t reserved_size, size_t dyn_size,
 		BUG_ON(cpu == NR_CPUS);
 
 		/* allocate space for the whole group */
+		// @zouyalong: 申请 percpu 内存
 		ptr = alloc_fn(cpu, gi->nr_units * ai->unit_size, atom_size);
 		if (!ptr) {
 			rc = -ENOMEM;
@@ -1619,6 +1635,7 @@ int __init pcpu_embed_first_chunk(size_t reserved_size, size_t dyn_size,
 		}
 		areas[group] = ptr;
 
+		// @zouyalong: 获取 percpu 内存基地址，赋值给 base
 		base = min(ptr, base);
 
 		for (i = 0; i < gi->nr_units; i++, ptr += ai->unit_size) {
@@ -1635,6 +1652,7 @@ int __init pcpu_embed_first_chunk(size_t reserved_size, size_t dyn_size,
 
 	/* base address is now known, determine group base offsets */
 	max_distance = 0;
+	// @zouyalong: cpu 分组，用于提升 percpu 内存访问效率，提高调度器的性能
 	for (group = 0; group < ai->nr_groups; group++) {
 		ai->groups[group].base_offset = areas[group] - base;
 		max_distance = max_t(size_t, max_distance,
@@ -1658,6 +1676,7 @@ int __init pcpu_embed_first_chunk(size_t reserved_size, size_t dyn_size,
 		PFN_DOWN(size_sum), base, ai->static_size, ai->reserved_size,
 		ai->dyn_size, ai->unit_size);
 
+	// @zouyalong: 初始化分配的内存空间。进一步细化地对整片内存进行划分
 	rc = pcpu_setup_first_chunk(ai, base);
 	goto out_free;
 
@@ -1796,6 +1815,7 @@ out_free_ar:
  * on the physical linear memory mapping which uses large page
  * mappings on applicable archs.
  */
+// @zouyalong: percpu 地址偏移。配合 pcpu_base_addr 使用。
 unsigned long __per_cpu_offset[NR_CPUS] __read_mostly;
 EXPORT_SYMBOL(__per_cpu_offset);
 
@@ -1810,6 +1830,9 @@ static void __init pcpu_dfl_fc_free(void *ptr, size_t size)
 	free_bootmem(__pa(ptr), size);
 }
 
+/// @zouyalong: 为每个 cpu 确定 percpu 内存偏移地址(__per_cpu_offset)时就是根据 percpu 变量的加载地址和 percpu 内存起始地址计算的，而每个 cpu 之间的偏移则是由 unit_size 指定。
+/// @param  
+/// @return 
 void __init setup_per_cpu_areas(void)
 {
 	unsigned long delta;

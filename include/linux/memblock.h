@@ -27,17 +27,18 @@ struct memblock_region {
 	phys_addr_t size;
 };
 
+/// @zouyalong: memblock_type 类型代表了一块内存
 struct memblock_type {
 	unsigned long cnt;	/* number of regions */
 	unsigned long max;	/* size of the allocated array */
-	struct memblock_region *regions;
+	struct memblock_region *regions;	// region 数组
 };
 
 struct memblock {
 	phys_addr_t current_limit;
 	phys_addr_t memory_size;	/* Updated by memblock_analyze() */
-	struct memblock_type memory;
-	struct memblock_type reserved;
+	struct memblock_type memory;	// 使用区
+	struct memblock_type reserved;	// 保留区
 };
 
 extern struct memblock memblock;

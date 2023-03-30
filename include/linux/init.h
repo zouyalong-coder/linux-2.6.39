@@ -40,6 +40,7 @@
 
 /* These are for everybody (although not all archs will actually
    discard it in modules) */
+// @zouyalong: __section 表示链接到 .init.text； __cold 表示标记此函数很少使用所以编译器必须优化此函数的大小
 #define __init		__section(.init.text) __cold notrace
 #define __initdata	__section(.init.data)
 #define __initconst	__section(.init.rodata)

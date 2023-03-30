@@ -57,7 +57,7 @@ static inline void *current_text_addr(void)
  *  Members of this structure are referenced in head.S, so think twice
  *  before touching them. [mj]
  */
-
+// @zouyalong
 struct cpuinfo_x86 {
 	__u8			x86;		/* CPU family */
 	__u8			x86_vendor;	/* CPU vendor */
@@ -87,7 +87,7 @@ struct cpuinfo_x86 {
 	/* Maximum supported CPUID level, -1=no CPUID: */
 	int			cpuid_level;
 	__u32			x86_capability[NCAPINTS];
-	char			x86_vendor_id[16];
+	char			x86_vendor_id[16];	// 厂商 ID
 	char			x86_model_id[64];
 	/* in KB - valid for CPUS which support this call: */
 	int			x86_cache_size;
@@ -120,13 +120,14 @@ struct cpuinfo_x86 {
 #define X86_VENDOR_CENTAUR	5
 #define X86_VENDOR_TRANSMETA	7
 #define X86_VENDOR_NSC		8
-#define X86_VENDOR_NUM		9
+#define X86_VENDOR_NUM		9	// @zouyalong: 厂商 ID 数量，直接有系统 hard code
 
 #define X86_VENDOR_UNKNOWN	0xff
 
 /*
  * capabilities of CPUs
  */
+// @zouyalong: boot cpu info。位于 arch/x86/kernel/setup.c
 extern struct cpuinfo_x86	boot_cpu_data;
 extern struct cpuinfo_x86	new_cpu_data;
 
@@ -170,6 +171,7 @@ extern unsigned short num_cache_leaves;
 extern void detect_extended_topology(struct cpuinfo_x86 *c);
 extern void detect_ht(struct cpuinfo_x86 *c);
 
+// @zouyalong: 本地 cpuid 指令，用于获取 cpu 的信息，其中 eax 是输入，ebx, ecx, edx，eax 是输出
 static inline void native_cpuid(unsigned int *eax, unsigned int *ebx,
 				unsigned int *ecx, unsigned int *edx)
 {
@@ -221,13 +223,14 @@ struct x86_hw_tss {
 
 } __attribute__((packed));
 #else
+// @zouyalong:  tss结构体
 struct x86_hw_tss {
 	u32			reserved1;
 	u64			sp0;
 	u64			sp1;
 	u64			sp2;
 	u64			reserved2;
-	u64			ist[7];
+	u64			ist[7];	// @zouyalong: 7个中断栈, 在中断向量表中，ist（3位）指定了中断栈的索引
 	u32			reserved3;
 	u32			reserved4;
 	u16			reserved5;
@@ -643,6 +646,7 @@ extern void prepare_to_copy(struct task_struct *tsk);
 unsigned long get_wchan(struct task_struct *p);
 
 /*
+ * zouyalong: 从eax, ebx, ecx, edx中获取cpuid的值。
  * Generic CPUID function
  * clear %ecx since some cpus (Cyrix MII) do not set or clear %ecx
  * resulting in stale register contents being returned.
@@ -656,7 +660,7 @@ static inline void cpuid(unsigned int op,
 	__cpuid(eax, ebx, ecx, edx);
 }
 
-/* Some CPUID calls want 'count' to be placed in ecx */
+/* zouyalong: Some CPUID calls want 'count' to be placed in ecx  */
 static inline void cpuid_count(unsigned int op, int count,
 			       unsigned int *eax, unsigned int *ebx,
 			       unsigned int *ecx, unsigned int *edx)

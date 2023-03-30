@@ -17,7 +17,8 @@ A-=\[； 干嘛呀把电脑坏了，恨谁呀，把你了，一会儿你要钱�
 #ifdef CONFIG_X86_32
 #define LOAD_OFFSET __PAGE_OFFSET
 #else
-#define LOAD_OFFSET __START_KERNEL_map
+; @zouyalong: 内核加载物理地址
+#define LOAD_OFFSET __START_KERNEL_map	
 #endif
 
 #include <asm-generic/vmlinux.lds.h>
@@ -94,14 +95,14 @@ SECTIONS
 	.text :  AT(ADDR(.text) - LOAD_OFFSET) {
 		_text = .;
 		/* bootstrapping code */
-		HEAD_TEXT
+		HEAD_TEXT	; @zouyalong: *(.head.text)
 #ifdef CONFIG_X86_32
 		. = ALIGN(PAGE_SIZE);
 		*(.text..page_aligned)
 #endif
 		. = ALIGN(8);
-		_stext = .;
-		TEXT_TEXT
+		_stext = .; @zouyalong: start of text
+		TEXT_TEXT	; @zouyalong: split text into different sections
 		SCHED_TEXT
 		LOCK_TEXT
 		KPROBES_TEXT

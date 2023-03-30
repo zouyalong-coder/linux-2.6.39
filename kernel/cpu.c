@@ -548,6 +548,7 @@ static DECLARE_BITMAP(cpu_active_bits, CONFIG_NR_CPUS) __read_mostly;
 const struct cpumask *const cpu_active_mask = to_cpumask(cpu_active_bits);
 EXPORT_SYMBOL(cpu_active_mask);
 
+// @zouyalong: 支持CPU热插拔时候的CPU ID
 void set_cpu_possible(unsigned int cpu, bool possible)
 {
 	if (possible)
@@ -556,6 +557,7 @@ void set_cpu_possible(unsigned int cpu, bool possible)
 		cpumask_clear_cpu(cpu, to_cpumask(cpu_possible_bits));
 }
 
+// @zouyalong: 当前热插拔的CPU
 void set_cpu_present(unsigned int cpu, bool present)
 {
 	if (present)
@@ -564,6 +566,7 @@ void set_cpu_present(unsigned int cpu, bool present)
 		cpumask_clear_cpu(cpu, to_cpumask(cpu_present_bits));
 }
 
+// @zouyalong: 当前所有在线的CPU. online + present 可以判断 CPU 是否被调度出去。
 void set_cpu_online(unsigned int cpu, bool online)
 {
 	if (online)

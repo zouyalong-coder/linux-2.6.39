@@ -664,6 +664,7 @@ struct sysinfo {
  * though, hence the two different methods.
  */
 #ifndef __OPTIMIZE__
+// @zouyalong: 通过数组下标为-1的方式来触发编译错误
 #define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
 #else
 extern int __build_bug_on_failed;

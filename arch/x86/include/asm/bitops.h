@@ -28,6 +28,7 @@
    versions. */
 #define BITOP_ADDR(x) "=m" (*(volatile long *) (x))
 #else
+// @zouyalong: 转换给定参数至 (*(volatile long *) 并且加了 +m 约束。+ 意味着这个操作数对于指令是可读写的。m 显示这是一个内存操作数
 #define BITOP_ADDR(x) "+m" (*(volatile long *) (x))
 #endif
 
@@ -59,12 +60,16 @@
 static __always_inline void
 set_bit(unsigned int nr, volatile unsigned long *addr)
 {
-	if (IS_IMMEDIATE(nr)) {
+	if (IS_IMMEDIATE(nr)) { // @zouyalong: cpu 不是编译时恒定变量，所以这里是 false
 		asm volatile(LOCK_PREFIX "orb %1,%0"
 			: CONST_MASK_ADDR(nr, addr)
 			: "iq" ((u8)CONST_MASK(nr))
 			: "memory");
 	} else {
+		// @zouyalong: 
+		// - memory: 它告诉编译器汇编代码执行内存读或写到某些项，而不是那些输入或输出操作数（例如，访问指向输出参数的内存）。
+		// - Ir: 寄存器操作数。
+		// - bts: bts 指令设置一个位字符串的给定位，存储给定位的值到 CF 标志位。所以我们传递 cpu 号，我们的例子中为 0，给 set_bit 并且执行后，其设置了在 cpu_online_bits cpumask 中的 0 位。这意味着第一个 cpu 此时上线了。
 		asm volatile(LOCK_PREFIX "bts %1,%0"
 			: BITOP_ADDR(addr) : "Ir" (nr) : "memory");
 	}
