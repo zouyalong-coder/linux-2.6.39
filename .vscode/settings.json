@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "bitset": "c",
+        "string": "c"
+    },
+    "C_Cpp.formatting": "disabled"
+}
