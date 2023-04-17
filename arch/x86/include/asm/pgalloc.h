@@ -59,6 +59,7 @@ static inline void __pte_free_tlb(struct mmu_gather *tlb, struct page *pte,
 	___pte_free_tlb(tlb, pte);
 }
 
+/// zouyalong: 分配并设置 pte
 static inline void pmd_populate_kernel(struct mm_struct *mm,
 				       pmd_t *pmd, pte_t *pte)
 {

@@ -38,6 +38,7 @@
  * next kernel with full memory.
  */
 struct e820map e820;
+// zouyalong: e820 备份。
 struct e820map e820_saved;
 
 /* For PCI or other memory-mapped resources */

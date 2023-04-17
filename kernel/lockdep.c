@@ -2716,6 +2716,7 @@ struct lock_class_key __lockdep_no_validate__;
 /*
  * This gets called for every mutex_lock*()/spin_lock*() operation.
  * We maintain the dependency maps and validate the locking attempt:
+ * zouyalong：真正进行锁获取逻辑，在 IRQ 被禁止的期间。
  */
 static int __lock_acquire(struct lockdep_map *lock, unsigned int subclass,
 			  int trylock, int read, int check, int hardirqs_off,
@@ -2736,6 +2737,7 @@ static int __lock_acquire(struct lockdep_map *lock, unsigned int subclass,
 	if (unlikely(!debug_locks))
 		return 0;
 
+	// double check
 	if (DEBUG_LOCKS_WARN_ON(!irqs_disabled()))
 		return 0;
 
@@ -3206,15 +3208,16 @@ void lock_acquire(struct lockdep_map *lock, unsigned int subclass,
 	if (unlikely(current->lockdep_recursion))
 		return;
 
-	raw_local_irq_save(flags);
+	raw_local_irq_save(flags);// flags = cr flag && disable_irq
 	check_flags(flags);
 
-	current->lockdep_recursion = 1;
+	current->lockdep_recursion = 1; // 标记进入lock 过程
 	trace_lock_acquire(lock, subclass, trylock, read, check, nest_lock, ip);
+	// 真正锁的过程。
 	__lock_acquire(lock, subclass, trylock, read, check,
 		       irqs_disabled_flags(flags), nest_lock, ip, 0);
-	current->lockdep_recursion = 0;
-	raw_local_irq_restore(flags);
+	current->lockdep_recursion = 0; // 标记退出 lock 过程
+	raw_local_irq_restore(flags); // 恢复 cr flag，并开启中断
 }
 EXPORT_SYMBOL_GPL(lock_acquire);
 

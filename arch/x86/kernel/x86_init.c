@@ -32,6 +32,7 @@ void iommu_shutdown_noop(void) { }
  * The platform setup functions are preset with the default functions
  * for standard PC hardware.
  */
+// zouyalong: x86_init 全局变量。
 struct x86_init_ops x86_init __initdata = {
 
 	.resources = {

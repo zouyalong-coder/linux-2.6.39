@@ -27,6 +27,7 @@
 
 asmlinkage void preempt_schedule(void);
 
+// zouyalong: 禁止抢占，即对 current_info->preempt_count +1. 并使用屏障保证指令序。
 #define preempt_disable() \
 do { \
 	inc_preempt_count(); \
@@ -82,14 +83,14 @@ do { \
 
 #else
 
-#define preempt_disable()		do { } while (0)
-#define preempt_enable_no_resched()	do { } while (0)
-#define preempt_enable()		do { } while (0)
-#define preempt_check_resched()		do { } while (0)
+// #define preempt_disable()		do { } while (0)
+// #define preempt_enable_no_resched()	do { } while (0)
+// #define preempt_enable()		do { } while (0)
+// #define preempt_check_resched()		do { } while (0)
 
-#define preempt_disable_notrace()		do { } while (0)
-#define preempt_enable_no_resched_notrace()	do { } while (0)
-#define preempt_enable_notrace()		do { } while (0)
+// #define preempt_disable_notrace()		do { } while (0)
+// #define preempt_enable_no_resched_notrace()	do { } while (0)
+// #define preempt_enable_notrace()		do { } while (0)
 
 #endif
 

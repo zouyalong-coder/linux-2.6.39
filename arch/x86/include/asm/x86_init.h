@@ -127,7 +127,7 @@ struct x86_init_pci {
 
 /**
  * struct x86_init_ops - functions for platform specific setup
- *
+ * zouyalong: x86 初始化接口，
  */
 struct x86_init_ops {
 	struct x86_init_resources	resources;

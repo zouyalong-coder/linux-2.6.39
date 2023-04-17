@@ -33,7 +33,7 @@ struct thread_info {
 	__u32			flags;		/* low level flags */
 	__u32			status;		/* thread synchronous flags */
 	__u32			cpu;		/* current CPU */
-	// @zouyalong: 用于实现抢占，当preempt_count为0时，表示可以抢占，当preempt_count大于0时，表示不可以抢占
+	// @zouyalong: 用于实现抢占，当preempt_count为0时，表示可以抢占，当preempt_count大于0时，表示不可以抢占，即已经被占有了。此属性用于事项操作系统内的锁。
 	int			preempt_count;	/* 0 => preemptable,
 						   <0 => BUG */
 	mm_segment_t		addr_limit;

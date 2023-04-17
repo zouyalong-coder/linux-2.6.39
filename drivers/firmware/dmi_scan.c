@@ -396,6 +396,7 @@ static void __init dmi_dump_ids(void)
 	printk(KERN_CONT "\n");
 }
 
+// zouyalong: 检查 buf 的前4个字节是否是 __SM__ 字符串，并且获得 SMBIOS 的版本和 _DMI_ 的属性例如 _DMI_ 的结构表长度、结构表的地址等等
 static int __init dmi_present(const char __iomem *p)
 {
 	u8 buf[15];
@@ -424,11 +425,13 @@ static int __init dmi_present(const char __iomem *p)
 	return 1;
 }
 
+// zouyalong: 收集计算机相关信息。
 void __init dmi_scan_machine(void)
 {
 	char __iomem *p, *q;
 	int rc;
 
+	// 从 EFI 配置中读取。
 	if (efi_enabled) {
 		if (efi.smbios == EFI_INVALID_TABLE_ADDR)
 			goto error;
@@ -454,6 +457,7 @@ void __init dmi_scan_machine(void)
 		 * it's so early in setup that sucker gets confused into doing
 		 * what it shouldn't if we actually call it.
 		 */
+		// zouyalong: todo-了解一下 DMI 的背景。将 0xf0000 和 0x10000 之间的内存重新映射并追加到 early_ioremap 上
 		p = dmi_ioremap(0xF0000, 0x10000);
 		if (p == NULL)
 			goto error;
@@ -466,7 +470,7 @@ void __init dmi_scan_machine(void)
 				goto out;
 			}
 		}
-		dmi_iounmap(p, 0x10000);
+		dmi_iounmap(p, 0x10000); // 取消映射。
 	}
  error:
 	printk(KERN_INFO "DMI not present or invalid.\n");

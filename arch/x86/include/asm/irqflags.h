@@ -8,6 +8,7 @@
  * Interrupt control:
  */
 
+// zouyalong: 通过 pushf + pop 得到当前的 flags，即处理器的标志寄存器。
 static inline unsigned long native_save_fl(void)
 {
 	unsigned long flags;
@@ -61,7 +62,8 @@ static inline void native_halt(void)
 #else
 #ifndef __ASSEMBLY__
 
-static inline unsigned long arch_local_save_flags(void)
+// zouyalong: 获取当前的标志寄存器的值。
+unsigned long arch_local_save_flags(void)
 {
 	return native_save_fl();
 }
@@ -101,6 +103,7 @@ static inline void halt(void)
 
 /*
  * For spinlocks, etc:
+ zouyalong: 获取当前标志，并关中断（避免抢占）
  */
 static inline unsigned long arch_local_irq_save(void)
 {

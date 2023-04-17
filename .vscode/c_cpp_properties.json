@@ -6,6 +6,12 @@
                 "_DEBUG",
                 "UNICODE",
                 "CONFIG_PCI",
+                "CONFIG_DMI",
+                "CONFIG_SMP",
+                "CONFIG_PREEMPT",
+                "__KERNEL__",
+                "CONFIG_DEBUG_LOCK_ALLOC",
+                "CONFIG_LOCKDEP",
                 "_UNICODE"
             ]
         }

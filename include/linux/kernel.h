@@ -77,6 +77,7 @@
 }							\
 )
 
+// zouyalong: todo, __builtin_return_address 定义？猜测是读取当前函数栈的 ra, 0 可能是偏移量。
 #define _RET_IP_		(unsigned long)__builtin_return_address(0)
 #define _THIS_IP_  ({ __label__ __here; __here: (unsigned long)&&__here; })
 

@@ -206,7 +206,8 @@ static inline void __raw_write_lock_bh(rwlock_t *lock)
 	LOCK_CONTENDED(lock, do_raw_write_trylock, do_raw_write_lock);
 }
 
-static inline void __raw_write_lock(rwlock_t *lock)
+// zouyalong: 锁实现。
+static void __raw_write_lock(rwlock_t *lock)
 {
 	preempt_disable();
 	rwlock_acquire(&lock->dep_map, 0, 0, _RET_IP_);

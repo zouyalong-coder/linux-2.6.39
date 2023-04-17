@@ -1,7 +1,13 @@
 {
     "files.associations": {
         "bitset": "c",
-        "string": "c"
+        "string": "c",
+        "__node_handle": "c",
+        "__config": "cpp",
+        "__hash_table": "cpp",
+        "cstdlib": "cpp",
+        "optional": "cpp",
+        "unordered_map": "cpp"
     },
     "C_Cpp.formatting": "disabled"
 }

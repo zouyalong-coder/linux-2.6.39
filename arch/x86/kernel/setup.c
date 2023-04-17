@@ -159,6 +159,7 @@ static struct resource data_resource = {
 	.flags	= IORESOURCE_BUSY | IORESOURCE_MEM
 };
 
+// zouyalong: 内核代码段，在 set_arch 中设置。
 static struct resource code_resource = {
 	.name	= "Kernel code",
 	.start	= 0,
@@ -721,7 +722,7 @@ void __init setup_arch(char **cmdline_p)
 
 	early_trap_init();
 	early_cpu_init();	// 初始化 boot_cpu。
-	early_ioremap_init();
+	early_ioremap_init(); // 初始化 ioremap
 
 	setup_olpc_ofw_pgd();
 
@@ -771,7 +772,7 @@ void __init setup_arch(char **cmdline_p)
 	setup_memory_map();
 	parse_setup_data();
 	/* update the e820_saved too */
-	e820_reserve_setup_data();
+	e820_reserve_setup_data();// 设置 e820 全局变量。
 
 	copy_edd();
 
@@ -782,6 +783,7 @@ void __init setup_arch(char **cmdline_p)
 	init_mm.end_data = (unsigned long) _edata;
 	init_mm.brk = _brk_end;
 
+	// zouyalong：设置内核代码、数据位置。
 	code_resource.start = virt_to_phys(_text);
 	code_resource.end = virt_to_phys(_etext)-1;
 	data_resource.start = virt_to_phys(_etext);
@@ -846,6 +848,7 @@ void __init setup_arch(char **cmdline_p)
 	 */
 	init_hypervisor_platform();
 
+	// 空方法，本来是对 rom 进行探测，与 arch 有关。
 	x86_init.resources.probe_roms();
 
 	/* after parse_early_param, so could debug it */
@@ -853,7 +856,7 @@ void __init setup_arch(char **cmdline_p)
 	insert_resource(&iomem_resource, &data_resource);
 	insert_resource(&iomem_resource, &bss_resource);
 
-	trim_bios_range();
+	trim_bios_range(); // 退出 bios，回收 bios 内存
 #ifdef CONFIG_X86_32
 	if (ppro_with_ram_bug()) {
 		e820_update_range(0x70000000ULL, 0x40000ULL, E820_RAM,
